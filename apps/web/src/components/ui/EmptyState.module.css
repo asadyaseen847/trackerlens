@@ -1,0 +1,28 @@
+.waiting {
+  background: var(--surface);
+  border: 2px dashed var(--border);
+  border-radius: 22px;
+  padding: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.waiting h2 {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+.waiting p {
+  color: var(--muted);
+  max-width: 60ch;
+}
+
+@media (max-width: 480px) {
+  .waiting {
+    padding: 20px 16px;
+  }
+}

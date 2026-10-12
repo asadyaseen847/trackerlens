@@ -1,0 +1,38 @@
+.panel {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 22px;
+  box-shadow: 6px 6px 0 var(--shadow);
+  padding: 22px 24px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.head h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  text-wrap: balance;
+}
+
+.sub {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+@media (max-width: 480px) {
+  .panel {
+    padding: 18px 16px;
+  }
+}

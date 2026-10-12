@@ -1,0 +1,16 @@
+.page {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-inline: clamp(16px, 4vw, 40px);
+  padding-block: 26px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}

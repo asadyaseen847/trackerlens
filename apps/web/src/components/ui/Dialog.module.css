@@ -1,0 +1,39 @@
+.modal {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 20;
+}
+
+.dialog {
+  width: min(640px, 100%);
+  max-height: calc(100% - 32px);
+  overflow: auto;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 22px;
+  box-shadow: 8px 8px 0 var(--shadow);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dialog:focus-visible {
+  outline-offset: -4px;
+}
+
+.dialog h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}

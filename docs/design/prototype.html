@@ -1,0 +1,1433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+</head>
+<body>
+<title>Audience Tracker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Unbounded:wght@600..800&display=swap">
+<style>
+/* Layout: one centered column with three tabs (Websites, Social media, Install code). Bold ink borders, hard shadows, one lime highlight per screen. */
+:root {
+  --bg: #F3F0FF;
+  --surface: #FFFFFF;
+  --ink: #16131F;
+  --muted: #5B5670;
+  --faint: #6E6985;
+  --line: #E6E2F3;
+  --track: #EFEBFA;
+  --border: #16131F;
+  --shadow: #16131F;
+  --accent: #C8F542;
+  --on-accent: #16131F;
+  --good: #E3FBB0;
+  --bad: #FFD6CF;
+  --wait: #FFE9B8;
+  --tip-bg: #16131F;
+  --tip-fg: #FFFFFF;
+  --tip-muted: #C9C4DC;
+  --pressed-bg: #16131F;
+  --pressed-fg: #FFFFFF;
+  --focus: #2F6BFF;
+  --single: #16131F;
+  --overlay: rgba(22, 19, 31, .55);
+  --code-bg: #16131F;
+  --code-fg: #F5F3FF;
+  --code-accent: #C8F542;
+  /* channel types on the website chart */
+  --t-social: #FF3D8B;
+  --t-search: #2F6BFF;
+  --t-email: #E86A00;
+  --t-ai: #6C3CF5;
+  --t-direct: #0E9F92;
+  --t-other: #BDB7CC;
+  /* social platforms on the social chart */
+  --p1: #FF3D8B;
+  --p2: #2F6BFF;
+  --p3: #E86A00;
+  --p4: #6C3CF5;
+  --p5: #0E9F92;
+  --p6: #A38200;
+  --font-display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
+  --font-body: 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-code: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #120F1A; --surface: #1D1928; --ink: #F5F3FF; --muted: #B8B3CC; --faint: #A49FB9;
+    --line: #2E2840; --track: #2A2438; --border: #E9E5F7; --shadow: #5B4BC4;
+    --good: #35511A; --bad: #5A2430; --wait: #5A4515;
+    --tip-bg: #F5F3FF; --tip-fg: #16131F; --tip-muted: #5B5670;
+    --pressed-bg: #F5F3FF; --pressed-fg: #16131F; --focus: #5B8BFF; --single: #E9E5F7;
+    --overlay: rgba(0, 0, 0, .65); --code-bg: #0B0911; --code-fg: #F5F3FF; --code-accent: #C8F542;
+    --t-social: #F0458C; --t-search: #5B8BFF; --t-email: #E0731C; --t-ai: #9A75FF; --t-direct: #14A596; --t-other: #5E5872;
+    --p1: #F0458C; --p2: #5B8BFF; --p3: #E0731C; --p4: #9A75FF; --p5: #14A596; --p6: #A88A0C;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #120F1A; --surface: #1D1928; --ink: #F5F3FF; --muted: #B8B3CC; --faint: #A49FB9;
+  --line: #2E2840; --track: #2A2438; --border: #E9E5F7; --shadow: #5B4BC4;
+  --good: #35511A; --bad: #5A2430; --wait: #5A4515;
+  --tip-bg: #F5F3FF; --tip-fg: #16131F; --tip-muted: #5B5670;
+  --pressed-bg: #F5F3FF; --pressed-fg: #16131F; --focus: #5B8BFF; --single: #E9E5F7;
+  --overlay: rgba(0, 0, 0, .65); --code-bg: #0B0911; --code-fg: #F5F3FF; --code-accent: #C8F542;
+  --t-social: #F0458C; --t-search: #5B8BFF; --t-email: #E0731C; --t-ai: #9A75FF; --t-direct: #14A596; --t-other: #5E5872;
+  --p1: #F0458C; --p2: #5B8BFF; --p3: #E0731C; --p4: #9A75FF; --p5: #14A596; --p6: #A88A0C;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.page { max-width: 1240px; margin: 0 auto; padding-inline: clamp(16px, 4vw, 40px); padding-block: 26px 56px; display: flex; flex-direction: column; gap: 22px; }
+
+/* ---------- top bar ---------- */
+.topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 12px; font-family: var(--font-display); font-weight: 800; font-size: 14px; letter-spacing: .02em; }
+.logo { width: 40px; height: 40px; border-radius: 12px; background: var(--accent); border: 2px solid var(--border); display: grid; place-items: center; transform: rotate(-6deg); flex: none; }
+.logo svg { stroke: var(--on-accent); }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.workspace { font-weight: 700; padding: 8px 14px; border: 2px solid var(--border); border-radius: 14px; background: var(--surface); }
+.badge { border: 2px dashed var(--border); border-radius: 999px; padding: 5px 12px; font-weight: 800; font-size: 13px; background: var(--surface); }
+
+/* ---------- tabs ---------- */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid var(--border); padding-bottom: 12px; }
+.tab { min-height: 46px; padding: 0 18px; border-radius: 14px; border: 2px solid transparent; background: transparent; font-weight: 800; font-size: 16px; display: inline-flex; align-items: center; gap: 9px; }
+.tab:hover { background: var(--track); }
+.tab[aria-selected="true"] { background: var(--surface); border-color: var(--border); box-shadow: 4px 4px 0 var(--shadow); }
+.tab svg { stroke: currentColor; flex: none; }
+
+/* ---------- headings & toolbars ---------- */
+.headrow { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(30px, 5vw, 50px); letter-spacing: -.03em; line-height: 1.04; margin: 0; text-wrap: balance; }
+.insight { margin: 10px 0 0; font-size: 17px; max-width: 70ch; }
+.insight b { font-weight: 800; }
+.range { font-size: 14px; color: var(--muted); margin: 0; }
+.range b { color: var(--ink); }
+
+.seg { display: inline-flex; flex-wrap: wrap; background: var(--surface); border: 2px solid var(--border); border-radius: 16px; padding: 3px; gap: 3px; box-shadow: 4px 4px 0 var(--shadow); }
+.seg button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: transparent; font-weight: 800; font-size: 15px; }
+.seg button:hover:not([aria-pressed="true"]) { background: var(--track); }
+.seg button[aria-pressed="true"] { background: var(--pressed-bg); color: var(--pressed-fg); }
+.seg.small { box-shadow: none; }
+.seg.small button { font-size: 14px; padding: 0 14px; }
+
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.field { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: var(--muted); }
+.select { min-height: 44px; padding: 0 36px 0 12px; border: 2px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--ink); font-weight: 700; font-size: 14px; appearance: none; background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chip { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px 0 12px; border: 2px solid var(--border); border-radius: 999px; background: var(--surface); font-weight: 700; font-size: 14px; }
+.chip .sw { width: 12px; height: 12px; border-radius: 4px; background: var(--c); }
+.chip[aria-pressed="false"] { border-style: dashed; color: var(--muted); }
+.chip[aria-pressed="false"] .sw { background: transparent; box-shadow: inset 0 0 0 2px var(--c); }
+
+/* ---------- website cards ---------- */
+.sites { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.site { text-align: left; background: var(--surface); border: 2px solid var(--border); border-radius: 20px; padding: 16px 16px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; box-shadow: 4px 4px 0 var(--shadow); }
+.site[aria-pressed="true"] { background: var(--pressed-bg); color: var(--pressed-fg); }
+.site[aria-pressed="true"] .s-sub { color: inherit; opacity: .85; }
+.site .s-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.site .s-host { font-weight: 800; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site .s-num { font-family: var(--font-display); font-weight: 800; font-size: 22px; font-variant-numeric: tabular-nums; }
+.site .s-sub { font-size: 13px; color: var(--muted); }
+.site svg { display: block; width: 100%; height: 34px; }
+.status { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 999px; border: 1.5px solid currentColor; }
+.status.live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--t-direct); }
+.status.wait { background: var(--wait); color: var(--ink); border-color: var(--border); }
+.site.add { border-style: dashed; box-shadow: none; align-items: center; justify-content: center; text-align: center; min-height: 150px; font-weight: 800; }
+.site.add .plus { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--border); display: grid; place-items: center; font-size: 24px; line-height: 1; }
+
+/* ---------- tiles ---------- */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; }
+.tile { background: var(--surface); border: 2px solid var(--border); border-radius: 20px; box-shadow: 5px 5px 0 var(--shadow); padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.tile.hot { background: var(--accent); color: var(--on-accent); }
+.tile .lab { font-size: 14px; font-weight: 800; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.tile.hot .lab { color: var(--on-accent); }
+.tile .num { font-family: var(--font-display); font-weight: 800; font-size: clamp(26px, 3vw, 32px); letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; overflow-wrap: anywhere; }
+.delta { align-self: flex-start; font-size: 13px; font-weight: 800; padding: 3px 9px; border-radius: 999px; border: 1.5px solid var(--border); color: var(--ink); white-space: nowrap; }
+.delta.up { background: var(--good); }
+.delta.down { background: var(--bad); }
+.delta.plain { background: transparent; }
+.tile.hot .delta { background: #FFFFFF; color: #16131F; border-color: #16131F; }
+.pulse { position: relative; width: 10px; height: 10px; flex: none; }
+.pulse i, .pulse b { position: absolute; inset: 0; border-radius: 50%; background: var(--t-direct); }
+@media (prefers-reduced-motion: no-preference) {
+  .pulse i { animation: ping 1.8s ease-out infinite; }
+  @keyframes ping { 0% { transform: scale(1); opacity: .8; } 70%, 100% { transform: scale(2.3); opacity: 0; } }
+}
+
+/* ---------- panels ---------- */
+.panel { background: var(--surface); border: 2px solid var(--border); border-radius: 22px; box-shadow: 6px 6px 0 var(--shadow); padding: 22px 24px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.panel h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 18px; text-wrap: balance; }
+.panel h3 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 15px; }
+.panel .sub { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+
+.chart { position: relative; border-radius: 8px; outline-offset: 4px; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ax { font: 12px var(--font-body); fill: var(--faint); font-variant-numeric: tabular-nums; }
+.grid { stroke: var(--line); stroke-width: 1; }
+.base { stroke: var(--border); stroke-width: 2; }
+.chart-empty { min-height: 220px; display: grid; place-items: center; text-align: center; color: var(--muted); border: 2px dashed var(--line); border-radius: 14px; padding: 20px; }
+.tip { position: absolute; top: 8px; min-width: 200px; max-width: 250px; pointer-events: none; background: var(--tip-bg); color: var(--tip-fg); border-radius: 14px; padding: 12px 14px; box-shadow: 4px 4px 0 var(--accent); font-size: 13px; z-index: 3; }
+.tip .t-date { color: var(--tip-muted); }
+.tip .t-total { font-family: var(--font-display); font-weight: 700; font-size: 18px; margin: 2px 0 8px; font-variant-numeric: tabular-nums; }
+.tip .t-row { display: flex; align-items: center; gap: 8px; line-height: 1.75; }
+.tip .t-row span:nth-child(2) { flex: 1 1 auto; }
+.tip .t-row span:last-child { font-variant-numeric: tabular-nums; font-weight: 700; }
+.sw { width: 10px; height: 10px; border-radius: 3px; background: var(--c); flex: none; display: inline-block; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 14px; }
+th, td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-size: 13px; color: var(--muted); font-weight: 800; border-bottom: 2px solid var(--border); }
+tfoot td { font-weight: 800; border-bottom: 0; border-top: 2px solid var(--border); }
+td .best { margin-left: 6px; font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: var(--accent); color: var(--on-accent); border: 1.5px solid var(--border); }
+
+.where { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 22px; }
+.rows { display: flex; flex-direction: column; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px 12px; }
+.rowname { display: flex; align-items: center; gap: 8px; font-weight: 700; min-width: 0; }
+.rowname .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rowname .host { color: var(--muted); font-weight: 600; }
+.code-chip { flex: none; font-size: 11px; font-weight: 800; letter-spacing: .06em; padding: 2px 6px; border-radius: 6px; border: 1.5px solid var(--border); }
+.rownums { display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+.rownums .v { font-weight: 800; }
+.mini { font-size: 12px; font-weight: 800; padding: 1px 7px; border-radius: 999px; border: 1.5px solid var(--border); white-space: nowrap; }
+.mini.up { background: var(--good); }
+.mini.down { background: var(--bad); }
+.track { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; }
+.bar { flex: 1 1 auto; height: 10px; border-radius: 999px; background: var(--track); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 999px; background: var(--c); }
+.pct { min-width: 46px; text-align: right; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.empty { color: var(--muted); font-size: 14px; }
+
+/* ---------- empty state for a new website ---------- */
+.waiting { background: var(--surface); border: 2px dashed var(--border); border-radius: 22px; padding: 28px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; }
+.waiting h2 { margin: 0 0 6px; font-family: var(--font-display); font-size: 20px; }
+.waiting p { margin: 0; color: var(--muted); max-width: 60ch; }
+
+/* ---------- buttons ---------- */
+.btn { min-height: 46px; padding: 0 18px; border-radius: 14px; border: 2px solid var(--border); background: var(--surface); font-weight: 800; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn.primary { background: var(--accent); color: var(--on-accent); box-shadow: 3px 3px 0 var(--shadow); }
+.btn.dark { background: var(--pressed-bg); color: var(--pressed-fg); }
+.btn.danger { border-style: dashed; }
+.btn:hover { filter: brightness(.97); }
+.btn svg { stroke: currentColor; flex: none; }
+
+/* ---------- social ---------- */
+.socials { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+.soc { background: var(--surface); border: 2px solid var(--border); border-radius: 20px; box-shadow: 5px 5px 0 var(--shadow); padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.soc.off { box-shadow: none; border-style: dashed; }
+.soc-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.soc-name { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; min-width: 0; }
+.soc-name .sw { width: 14px; height: 14px; border-radius: 5px; }
+.soc-handle { font-size: 13px; color: var(--muted); font-weight: 600; }
+.soc-big { font-family: var(--font-display); font-weight: 800; font-size: 28px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.soc-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; border-top: 2px dashed var(--line); padding-top: 10px; }
+.soc-stats div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.soc-stats span { font-size: 12px; color: var(--muted); font-weight: 700; }
+.soc-stats b { font-size: 15px; font-variant-numeric: tabular-nums; }
+.soc-what { font-size: 13px; color: var(--muted); margin: 0; }
+
+/* ---------- install ---------- */
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 22px; align-items: start; }
+.codebox { position: relative; background: var(--code-bg); color: var(--code-fg); border-radius: 16px; border: 2px solid var(--border); padding: 18px 18px 16px; font-family: var(--font-code); font-size: 13.5px; line-height: 1.6; overflow-x: auto; }
+.codebox pre { margin: 0; white-space: pre; }
+.codebox .hl { color: var(--code-accent); }
+.codebar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.guide { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; }
+.guide code, .inline-code { font-family: var(--font-code); font-size: 13px; background: var(--track); padding: 1px 6px; border-radius: 6px; }
+.checkline { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.result { font-weight: 700; font-size: 14px; }
+.switches { display: flex; flex-direction: column; gap: 12px; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 44px; }
+.switch label { font-weight: 700; }
+.switch small { display: block; font-weight: 500; color: var(--muted); font-size: 13px; }
+.switch input { appearance: none; width: 52px; height: 30px; border-radius: 999px; border: 2px solid var(--border); background: var(--track); position: relative; cursor: pointer; flex: none; }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); transition: left .15s ease; }
+.switch input:checked { background: var(--accent); }
+.switch input:checked::after { left: 25px; background: #16131F; }
+.form { display: grid; gap: 12px; }
+.form label { display: flex; flex-direction: column; gap: 6px; font-weight: 800; font-size: 14px; }
+.input { min-height: 46px; padding: 0 14px; border: 2px solid var(--border); border-radius: 12px; background: var(--surface); font-size: 15px; width: 100%; }
+.input[aria-invalid="true"] { border-color: var(--t-social); }
+.err { color: var(--ink); background: var(--bad); border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 700; }
+.facts { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.facts li { display: flex; gap: 10px; align-items: flex-start; }
+.facts li::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--ink); margin-top: 7px; flex: none; }
+
+/* ---------- modal & toast ---------- */
+.modal { position: fixed; inset: 0; background: var(--overlay); display: grid; place-items: center; padding: 16px; z-index: 20; }
+.dialog { width: min(640px, 100%); max-height: calc(100% - 32px); overflow: auto; background: var(--surface); border: 2px solid var(--border); border-radius: 22px; box-shadow: 8px 8px 0 var(--shadow); padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.dialog h2 { margin: 0; font-family: var(--font-display); font-size: 22px; }
+.steps { display: flex; gap: 8px; font-size: 13px; font-weight: 800; color: var(--muted); flex-wrap: wrap; }
+.steps span { padding: 4px 10px; border-radius: 999px; border: 1.5px solid var(--line); }
+.steps span.on { border-color: var(--border); color: var(--ink); background: var(--accent); }
+.dialog-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--tip-bg); color: var(--tip-fg); border-radius: 14px; padding: 12px 18px; font-weight: 700; box-shadow: 4px 4px 0 var(--accent); z-index: 30; max-width: calc(100% - 32px); }
+
+.foot { font-size: 14px; color: var(--muted); border: 2px dashed var(--border); border-radius: 16px; padding: 14px 16px; background: var(--surface); margin: 0; }
+.foot b { color: var(--ink); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .bar i { transition: width .35s ease; }
+  .seg button, .chip, .tab, .site { transition: background-color .15s ease; }
+}
+</style>
+
+<div class="page">
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 4 7-9"/></svg></span>
+      [YOUR BRAND]
+    </div>
+    <div class="meta">
+      <span class="workspace">[Customer company]</span>
+      <span class="badge">Demo · sample data</span>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <button type="button" class="tab" role="tab" id="tab-websites" aria-controls="panel-websites" aria-selected="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Websites</button>
+    <button type="button" class="tab" role="tab" id="tab-social" aria-controls="panel-social" aria-selected="false" tabindex="-1">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14a5 5 0 0 1 4.5 5"/></svg>Social media</button>
+    <button type="button" class="tab" role="tab" id="tab-install" aria-controls="panel-install" aria-selected="false" tabindex="-1">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>Install code</button>
+  </div>
+
+  <!-- =================== WEBSITES =================== -->
+  <section id="panel-websites" role="tabpanel" aria-labelledby="tab-websites" style="display:flex;flex-direction:column;gap:22px">
+    <div class="headrow">
+      <div>
+        <h1 id="w-title">Your website traffic</h1>
+        <p class="insight" id="w-insight"></p>
+      </div>
+      <div class="seg" role="group" aria-label="Group traffic by" id="w-period"></div>
+    </div>
+
+    <div class="sites" id="sites" role="group" aria-label="Pick a website"></div>
+
+    <div id="w-waiting" hidden></div>
+
+    <div id="w-body" style="display:flex;flex-direction:column;gap:22px">
+      <div class="toolbar">
+        <label class="field" for="w-device">Device
+          <select class="select" id="w-device">
+            <option value="all">All devices</option>
+            <option value="0">Phone</option>
+            <option value="1">Desktop</option>
+            <option value="2">Tablet</option>
+          </select>
+        </label>
+        <label class="field" for="w-country">Country
+          <select class="select" id="w-country"></select>
+        </label>
+        <div class="chips" role="group" aria-label="Traffic types" id="w-types"></div>
+      </div>
+      <p class="range" id="w-range"></p>
+
+      <section class="kpis" aria-label="How much traffic">
+        <div class="tile hot"><span class="lab">Visits</span><span class="num" id="k-visits"></span><span class="delta" id="d-visits"></span></div>
+        <div class="tile"><span class="lab">Unique visitors</span><span class="num" id="k-uniq"></span><span class="delta" id="d-uniq"></span></div>
+        <div class="tile"><span class="lab">Pages viewed</span><span class="num" id="k-pv"></span><span class="delta" id="d-pv"></span></div>
+        <div class="tile"><span class="lab"><span class="pulse" aria-hidden="true"><i></i><b></b></span>On the site right now</span><span class="num" id="k-live"></span><span class="delta plain" id="d-live">updates every few seconds</span></div>
+      </section>
+
+      <section class="panel" aria-labelledby="w-chart-title">
+        <div class="panel-head">
+          <div>
+            <h2 id="w-chart-title">Visits per day</h2>
+            <p class="sub">Each bar is split by type of traffic. Hover or tap a bar for details.</p>
+          </div>
+          <div class="seg small" role="group" aria-label="Show as">
+            <button type="button" id="w-m-chart" aria-pressed="true">Chart</button>
+            <button type="button" id="w-m-table" aria-pressed="false">Table</button>
+          </div>
+        </div>
+        <div class="chart" id="w-chart" tabindex="0" role="img" aria-label="Stacked bar chart of visits by type of traffic. Use the left and right arrow keys to read each bar."></div>
+        <div class="tbl-wrap" id="w-table" hidden></div>
+        <p class="note" id="w-chart-note" hidden>This year's bar is striped because the year isn't over yet.</p>
+      </section>
+
+      <section class="where" aria-label="Where visits came from">
+        <div class="panel">
+          <div class="panel-head"><div><h2>Platforms</h2><p class="sub">Which platform sent each visit</p></div></div>
+          <ul class="rows" id="w-platforms"></ul>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Top pages</h2><p class="sub">Pages people looked at most</p></div></div>
+          <ul class="rows" id="w-pages"></ul>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Campaigns</h2><p class="sub">Links with campaign tags</p></div></div>
+          <ul class="rows" id="w-campaigns"></ul>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Countries</h2><p class="sub">Where visitors are</p></div></div>
+          <ul class="rows" id="w-countries"></ul>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Devices</h2><p class="sub">What they used to visit</p></div></div>
+          <ul class="rows" id="w-devices"></ul>
+        </div>
+      </section>
+    </div>
+    <div class="sr" aria-live="polite" id="w-live"></div>
+  </section>
+
+  <!-- =================== SOCIAL =================== -->
+  <section id="panel-social" role="tabpanel" aria-labelledby="tab-social" hidden style="display:flex;flex-direction:column;gap:22px">
+    <div class="headrow">
+      <div>
+        <h1>Your social media audience</h1>
+        <p class="insight" id="s-insight"></p>
+      </div>
+      <div class="seg" role="group" aria-label="Group social numbers by" id="s-period"></div>
+    </div>
+    <p class="range" id="s-range"></p>
+
+    <section class="kpis" aria-label="Social media totals">
+      <div class="tile hot"><span class="lab">Followers, all platforms</span><span class="num" id="sk-followers"></span><span class="delta" id="sd-followers"></span></div>
+      <div class="tile"><span class="lab">New followers</span><span class="num" id="sk-new"></span><span class="delta" id="sd-new"></span></div>
+      <div class="tile"><span class="lab">Post views</span><span class="num" id="sk-views"></span><span class="delta" id="sd-views"></span></div>
+      <div class="tile"><span class="lab">Visits to your websites</span><span class="num" id="sk-visits"></span><span class="delta" id="sd-visits"></span></div>
+    </section>
+
+    <div class="socials" id="socials"></div>
+
+    <section class="panel" aria-labelledby="s-chart-title">
+      <div class="panel-head">
+        <div>
+          <h2 id="s-chart-title">Post views per day</h2>
+          <p class="sub">Connected platforms only. Hover or tap a bar for details.</p>
+        </div>
+        <div class="chips" id="s-legend" aria-label="Legend"></div>
+      </div>
+      <div class="chart" id="s-chart" tabindex="0" role="img" aria-label="Stacked bar chart of post views by social platform. Use the left and right arrow keys to read each bar."></div>
+    </section>
+
+    <section class="panel" aria-labelledby="s-table-title">
+      <div class="panel-head"><div><h2 id="s-table-title">From social post to website visit</h2><p class="sub">Which platform turns views into visits best</p></div></div>
+      <div class="tbl-wrap" id="s-table"></div>
+      <p class="note">Instagram and TikTok often hide where a visitor came from. Add campaign tags to the links you share there; the <a href="#install">link builder</a> in Install code makes them for you.</p>
+    </section>
+    <div class="sr" aria-live="polite" id="s-live"></div>
+  </section>
+
+  <!-- =================== INSTALL =================== -->
+  <section id="panel-install" role="tabpanel" aria-labelledby="tab-install" hidden style="display:flex;flex-direction:column;gap:22px">
+    <div class="headrow">
+      <div>
+        <h1>Install the tracking code</h1>
+        <p class="insight">Each website gets its own one-line code. Paste it once in the site's global header or footer and every page is counted.</p>
+      </div>
+      <button type="button" class="btn primary" id="i-add">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add website</button>
+    </div>
+
+    <div class="two">
+      <section class="panel" aria-labelledby="i-code-title">
+        <div class="panel-head">
+          <div><h2 id="i-code-title">Your code</h2><p class="sub">Paste it before the closing &lt;/head&gt; tag, or in the footer</p></div>
+          <label class="field" for="i-site">Website
+            <select class="select" id="i-site"></select>
+          </label>
+        </div>
+        <div class="codebox"><pre id="i-code"></pre></div>
+        <div class="codebar">
+          <span class="note" id="i-siteid"></span>
+          <button type="button" class="btn dark" id="i-copy">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h9"/></svg>Copy code</button>
+        </div>
+        <div class="checkline">
+          <button type="button" class="btn" id="i-check">Check installation</button>
+          <span class="result" id="i-result" aria-live="polite"></span>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="i-guide-title">
+        <div><h2 id="i-guide-title">Where to paste it</h2><p class="sub">Pick the tool your website is built with</p></div>
+        <div class="seg small" role="group" aria-label="Website builder" id="i-builders"></div>
+        <ol class="guide" id="i-guide"></ol>
+      </section>
+    </div>
+
+    <div class="two">
+      <section class="panel" aria-labelledby="i-settings-title">
+        <div><h2 id="i-settings-title">Website settings</h2><p class="sub" id="i-settings-sub"></p></div>
+        <div class="switches">
+          <div class="switch"><label for="i-self">Ignore my own visits<small>Visits from this browser won't be counted</small></label><input type="checkbox" role="switch" id="i-self"></div>
+          <div class="switch"><label for="i-subs">Count subdomains too<small>For example blog. and shop. on the same domain</small></label><input type="checkbox" role="switch" id="i-subs"></div>
+          <div class="switch"><label for="i-pause">Pause tracking<small>The code stays, but no visits are counted</small></label><input type="checkbox" role="switch" id="i-pause"></div>
+        </div>
+        <div><button type="button" class="btn danger" id="i-remove">Remove this website</button></div>
+      </section>
+
+      <section class="panel" aria-labelledby="i-link-title" id="install">
+        <div><h2 id="i-link-title">Make a trackable link for social posts</h2><p class="sub">Use it in your bio, posts and ads so every visit shows the right platform</p></div>
+        <div class="form">
+          <label for="l-url">Page link<input class="input" id="l-url" type="url" value="https://mybrand.com/sale" inputmode="url" autocomplete="off"></label>
+          <label for="l-platform">Where you'll share it
+            <select class="select" id="l-platform">
+              <option value="instagram">Instagram</option>
+              <option value="facebook">Facebook</option>
+              <option value="tiktok">TikTok</option>
+              <option value="x">X / Twitter</option>
+              <option value="linkedin">LinkedIn</option>
+              <option value="youtube">YouTube</option>
+              <option value="newsletter">Email newsletter</option>
+            </select>
+          </label>
+          <label for="l-campaign">Campaign name<input class="input" id="l-campaign" type="text" value="october-sale" autocomplete="off"></label>
+        </div>
+        <div class="codebox"><pre id="l-out" style="white-space: pre-wrap; word-break: break-all;"></pre></div>
+        <div><button type="button" class="btn dark" id="l-copy">Copy link</button></div>
+      </section>
+    </div>
+
+    <section class="panel" aria-labelledby="i-facts-title">
+      <div><h2 id="i-facts-title">What the code collects</h2><p class="sub">Small, cookie-free, and only on the website it was made for</p></div>
+      <ul class="facts">
+        <li>The page address, and the site or app the visitor came from</li>
+        <li>Campaign tags on the link, like utm_source=instagram</li>
+        <li>Screen size, to tell phones from desktops</li>
+        <li>Country, worked out on our server. The visitor's IP address is never stored.</li>
+        <li>No cookies and no personal details. Bots are filtered out.</li>
+      </ul>
+    </section>
+  </section>
+
+  <p class="foot"><b>This is a demo with sample data.</b> The code points to a placeholder address. Real numbers appear once the tracker server is live and the code is on a website.</p>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <div class="steps" aria-hidden="true"><span id="m-s1" class="on">1 · Website</span><span id="m-s2">2 · Code</span></div>
+    <div id="m-step1" style="display:flex;flex-direction:column;gap:14px">
+      <h2 id="m-title">Add a website</h2>
+      <form class="form" id="m-form" novalidate>
+        <label for="m-domain">Website address<input class="input" id="m-domain" type="text" placeholder="shop.example.com" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <div class="err" id="m-err" hidden></div>
+        <div class="dialog-actions">
+          <button type="button" class="btn" id="m-cancel">Cancel</button>
+          <button type="submit" class="btn primary">Create tracking code</button>
+        </div>
+      </form>
+    </div>
+    <div id="m-step2" hidden style="display:flex;flex-direction:column;gap:14px">
+      <h2 id="m-title2">Paste this on <span id="m-host"></span></h2>
+      <p class="note" style="font-size:15px">Put it in the global header or footer so it runs on every page. Visits start showing a minute after the first visitor arrives.</p>
+      <div class="codebox"><pre id="m-code"></pre></div>
+      <div class="dialog-actions">
+        <button type="button" class="btn" id="m-guide">Show install steps</button>
+        <button type="button" class="btn dark" id="m-copy">Copy code</button>
+        <button type="button" class="btn primary" id="m-done">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ================= Dates =================
+  var DAY = 864e5;
+  var START = Date.UTC(2023, 0, 1);              // a Sunday
+  function idxOf(y, m, d) { return Math.round((Date.UTC(y, m, d) - START) / DAY); }
+  function dateAt(i) { return new Date(START + i * DAY); }
+  var END = idxOf(2026, 9, 12);                   // data runs to yesterday, Oct 12, 2026
+  var N = END + 1;
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var MONTH = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function dow(i) { return i % 7; }
+  function fmtD(i, y) { var d = dateAt(i); return MON[d.getUTCMonth()] + ' ' + d.getUTCDate() + (y ? ', ' + d.getUTCFullYear() : ''); }
+  function yr(i) { return i / 365.25; }
+
+  function rnd(a, b) {
+    var t = (Math.imul(a, 374761393) + Math.imul(b, 668265263)) | 0;
+    t = Math.imul(t ^ (t >>> 13), 1274126177);
+    t ^= t >>> 16;
+    return ((t >>> 0) % 100000) / 100000;
+  }
+
+  // ================= Website sample data =================
+  var TYPES = [
+    { id: 'social', name: 'Social media', c: '--t-social', uniq: .88, pv: 1.6, wk: [1.12,.95,.98,.97,.98,1,1.1],   spike: .007 },
+    { id: 'search', name: 'Search',       c: '--t-search', uniq: .80, pv: 2.4, wk: [.75,1.08,1.1,1.08,1.05,1,.78],  spike: 0 },
+    { id: 'email',  name: 'Email',        c: '--t-email',  uniq: .60, pv: 2.8, wk: [.5,.7,2.4,1.1,.85,.7,.5],       spike: 0 },
+    { id: 'ai',     name: 'AI tools',     c: '--t-ai',     uniq: .85, pv: 2.6, wk: [.8,1.08,1.1,1.08,1.06,1,.82],   spike: 0 },
+    { id: 'direct', name: 'Direct',       c: '--t-direct', uniq: .55, pv: 3.0, wk: [.8,1.06,1.08,1.07,1.05,1,.82],  spike: 0 },
+    { id: 'other',  name: 'Other websites', c: '--t-other', uniq: .90, pv: 1.8, wk: [.9,1.02,1.05,1.04,1.02,1,.9],  spike: .004 }
+  ];
+  var TI = {}; TYPES.forEach(function (t, i) { TI[t.id] = i; });
+
+  var PLATFORMS = [
+    { id: 'instagram', name: 'Instagram', type: 'social', w: { main: .26, shop: .42, blog: .12 }, d: .06 },
+    { id: 'facebook', name: 'Facebook', type: 'social', w: { main: .2, shop: .22, blog: .1 }, d: -.05 },
+    { id: 'x', name: 'X / Twitter', type: 'social', w: { main: .18, shop: .06, blog: .22 }, d: .02 },
+    { id: 'linkedin', name: 'LinkedIn', type: 'social', w: { main: .14, shop: .02, blog: .2 }, d: .04 },
+    { id: 'tiktok', name: 'TikTok', type: 'social', w: { main: .1, shop: .2, blog: .04 }, d: .14 },
+    { id: 'youtube', name: 'YouTube', type: 'social', w: { main: .06, shop: .04, blog: .1 }, d: .03 },
+    { id: 'reddit', name: 'Reddit', type: 'social', w: { main: .04, shop: .02, blog: .14 }, d: .02 },
+    { id: 'pinterest', name: 'Pinterest', type: 'social', w: { main: .02, shop: .02, blog: .08 }, d: 0 },
+    { id: 'google', name: 'Google', type: 'search', w: { all: .86 }, d: -.01 },
+    { id: 'bing', name: 'Bing', type: 'search', w: { all: .09 }, d: 0 },
+    { id: 'duckduckgo', name: 'DuckDuckGo', type: 'search', w: { all: .05 }, d: .02 },
+    { id: 'newsletter', name: 'Your newsletter', type: 'email', w: { all: .78 }, d: 0 },
+    { id: 'otheremail', name: 'Other emails', type: 'email', w: { all: .22 }, d: 0 },
+    { id: 'chatgpt', name: 'ChatGPT', type: 'ai', w: { all: .62 }, d: .02 },
+    { id: 'perplexity', name: 'Perplexity', type: 'ai', w: { all: .2 }, d: .05 },
+    { id: 'gemini', name: 'Gemini', type: 'ai', w: { all: .12 }, d: .08 },
+    { id: 'copilot', name: 'Copilot', type: 'ai', w: { all: .06 }, d: 0 },
+    { id: 'direct', name: 'Typed in or bookmarked', type: 'direct', w: { all: 1 }, d: 0 },
+    { id: 'producthunt', name: 'producthunt.com', type: 'other', w: { all: .3 }, d: -.02 },
+    { id: 'github', name: 'github.com', type: 'other', w: { all: .22 }, d: .02 },
+    { id: 'medium', name: 'medium.com', type: 'other', w: { all: .2 }, d: -.01 },
+    { id: 'otherweb', name: 'Other websites', type: 'other', w: { all: .28 }, d: 0 }
+  ];
+  function platWeights(domId, typeId, y) {
+    var list = PLATFORMS.filter(function (p) { return p.type === typeId; });
+    var raw = list.map(function (p) {
+      var base = p.w[domId] !== undefined ? p.w[domId] : p.w.all;
+      return Math.max(.005, base * (1 + p.d * (y - 3)));
+    });
+    var tot = raw.reduce(function (a, b) { return a + b; }, 0);
+    return list.map(function (p, i) { return { p: p, w: raw[i] / tot }; });
+  }
+
+  var SAMPLE = [
+    { id: 'main', host: 'mybrand.com', site: 'mb_7Q2K9X', live: 21, dev: [.52, .43, .05],
+      mix: { social: [30, .62], search: [60, .42], email: [12, .5], ai: [2, 1.1], direct: [35, .45], other: [10, .3] },
+      pages: [['/', .3], ['/pricing', .18], ['/features', .14], ['/sale', .11], ['/about', .07], ['/contact', .05]] },
+    { id: 'shop', host: 'shop.mybrand.com', site: 'mb_4HT8RC', live: 12, dev: [.71, .24, .05],
+      mix: { social: [35, .7], search: [20, .4], email: [8, .5], ai: [1, 1.0], direct: [15, .45], other: [4, .3] },
+      pages: [['/', .24], ['/products/hoodie', .16], ['/collections/new', .14], ['/cart', .1], ['/products/cap', .08], ['/checkout', .05]] },
+    { id: 'blog', host: 'blog.mybrand.com', site: 'mb_9VW3LM', live: 7, dev: [.44, .51, .05],
+      mix: { social: [12, .55], search: [45, .5], email: [6, .45], ai: [1.5, 1.2], direct: [8, .4], other: [6, .35] },
+      pages: [['/', .16], ['/how-we-grew-to-10k', .2], ['/instagram-tips', .15], ['/seo-checklist', .12], ['/newsletter', .07], ['/about', .04]] }
+  ];
+  SAMPLE.forEach(function (dom, di) {
+    dom.sample = true;
+    dom.pre = TYPES.map(function (t, ti) {
+      var m = dom.mix[t.id], p = new Float64Array(N + 1);
+      for (var i = 0; i < N; i++) {
+        var v = m[0] * Math.exp(m[1] * yr(i)) * t.wk[dow(i)] * (1 + .1 * Math.sin(i / 11 + ti + di)) * (.88 + .24 * rnd(i, di * 10 + ti + 1));
+        if (t.spike && rnd(i, di * 10 + ti + 60) < t.spike) v *= 2.4 + 2 * rnd(i, di * 10 + ti + 90);
+        p[i + 1] = p[i] + Math.round(v);
+      }
+      return p;
+    });
+  });
+  function tsum(dom, ti, a, b) { return dom.pre ? dom.pre[ti][b + 1] - dom.pre[ti][a] : 0; }
+
+  var COUNTRIES = [
+    ['US', 'United States', function (y) { return .36 - .01 * y; }],
+    ['GB', 'United Kingdom', function () { return .09; }],
+    ['IN', 'India', function (y) { return .06 + .006 * y; }],
+    ['PK', 'Pakistan', function (y) { return .05 + .006 * y; }],
+    ['DE', 'Germany', function () { return .06; }],
+    ['CA', 'Canada', function () { return .05; }],
+    ['AE', 'United Arab Emirates', function (y) { return .03 + .003 * y; }],
+    ['AU', 'Australia', function () { return .03; }]
+  ];
+  var DEVICES = ['Phone', 'Desktop', 'Tablet'];
+  var CAMPAIGNS = [
+    ['october-sale', 'instagram', .32], ['new-drop', 'tiktok', .28], ['weekly-letter', 'newsletter', .8],
+    ['launch-thread', 'x', .22], ['spring-promo', 'facebook', .16], ['founder-story', 'linkedin', .25], ['how-to-video', 'youtube', .3]
+  ];
+
+  // ================= Social sample data =================
+  var SOCIAL = [
+    { id: 'instagram', name: 'Instagram', c: '--p1', f0: 4200, fg: .55, v0: 2600, vg: .6, er: 3.4, what: 'Followers, reach, profile visits and link taps. Needs an Instagram Business or Creator account.' },
+    { id: 'facebook', name: 'Facebook', c: '--p2', f0: 6100, fg: .16, v0: 1900, vg: .18, er: 1.2, what: 'Page followers, reach and link clicks from a Facebook Page.' },
+    { id: 'youtube', name: 'YouTube', c: '--p3', f0: 900, fg: .62, v0: 700, vg: .66, er: 4.1, what: 'Subscribers, video views and watch time for your channel.' },
+    { id: 'linkedin', name: 'LinkedIn', c: '--p4', f0: 1500, fg: .48, v0: 900, vg: .5, er: 2.6, what: 'Company page followers, impressions and clicks.' },
+    { id: 'tiktok', name: 'TikTok', c: '--p5', f0: 2200, fg: .8, v0: 3100, vg: .85, er: 5.9, what: 'Followers and video views from a TikTok Business account.' },
+    { id: 'x', name: 'X / Twitter', c: '--p6', f0: 3800, fg: .22, v0: 2400, vg: .25, er: .9, what: 'Followers and post views. X may charge for API access.' }
+  ];
+  SOCIAL.forEach(function (s, si) {
+    var p = new Float64Array(N + 1);
+    var wk = [1.15, .95, .97, .98, .99, 1.02, 1.12];
+    for (var i = 0; i < N; i++) {
+      var v = s.v0 * Math.exp(s.vg * yr(i)) * wk[dow(i)] * (.8 + .4 * rnd(i, 300 + si));
+      if (rnd(i, 400 + si) < .01) v *= 3 + 4 * rnd(i, 500 + si);
+      p[i + 1] = p[i] + Math.round(v);
+    }
+    s.pre = p;
+  });
+  function followersAt(s, i) { return Math.round(s.f0 * Math.exp(s.fg * yr(i)) * (1 + .004 * Math.sin(i / 5))); }
+  function viewsSum(s, a, b) { return s.pre[b + 1] - s.pre[a]; }
+
+  // ================= Periods =================
+  var UNIQ = { daily: .9, weekly: .85, monthly: .8, yearly: .78 };
+  var PERIODS = [['daily', 'Daily'], ['weekly', 'Weekly'], ['monthly', 'Monthly'], ['yearly', 'Yearly']];
+  function buildView(view) {
+    var b = [], v = { view: view };
+    if (view === 'daily') {
+      for (var i = END - 29; i <= END; i++) b.push({ a: i, b: i, label: fmtD(i), full: fmtD(i, true) });
+      v.cur = [END - 29, END]; v.prev = [END - 59, END - 30];
+      v.curLabel = fmtD(END - 29) + ' – ' + fmtD(END, true);
+      v.prevLabel = fmtD(END - 59) + ' – ' + fmtD(END - 30);
+      v.per = 'day';
+    } else if (view === 'weekly') {
+      var endW = END - dow(END);
+      for (var k = 11; k >= 0; k--) { var e = endW - 7 * k, s = e - 6; b.push({ a: s, b: e, label: fmtD(s), full: 'Week of ' + fmtD(s) + ' – ' + fmtD(e, true) }); }
+      v.cur = [b[0].a, endW]; v.prev = [b[0].a - 84, b[0].a - 1];
+      v.curLabel = fmtD(v.cur[0]) + ' – ' + fmtD(v.cur[1], true) + ' (12 weeks)';
+      v.prevLabel = fmtD(v.prev[0]) + ' – ' + fmtD(v.prev[1]);
+      v.per = 'week';
+    } else if (view === 'monthly') {
+      var d = dateAt(END), Y = d.getUTCFullYear(), M = d.getUTCMonth();
+      for (var j = 12; j >= 1; j--) {
+        var a2 = idxOf(Y, M - j, 1), b2 = idxOf(Y, M - j + 1, 1) - 1, dd = dateAt(a2);
+        b.push({ a: a2, b: b2, label: MON[dd.getUTCMonth()] + ' ’' + String(dd.getUTCFullYear()).slice(2), full: MONTH[dd.getUTCMonth()] + ' ' + dd.getUTCFullYear() });
+      }
+      v.cur = [b[0].a, b[11].b]; v.prev = [idxOf(Y, M - 24, 1), b[0].a - 1];
+      v.curLabel = b[0].full + ' – ' + b[11].full + ' (12 months)';
+      var p0 = dateAt(v.prev[0]), p1 = dateAt(v.prev[1]);
+      v.prevLabel = MONTH[p0.getUTCMonth()] + ' ' + p0.getUTCFullYear() + ' – ' + MONTH[p1.getUTCMonth()] + ' ' + p1.getUTCFullYear();
+      v.per = 'month';
+    } else {
+      var ed = dateAt(END), EY = ed.getUTCFullYear();
+      for (var yy = 2023; yy <= EY; yy++) {
+        var part = yy === EY;
+        b.push({ a: idxOf(yy, 0, 1), b: part ? END : idxOf(yy + 1, 0, 1) - 1, label: part ? yy + ' so far' : String(yy), full: part ? yy + ' so far (to ' + fmtD(END) + ')' : String(yy), partial: part });
+      }
+      v.cur = [idxOf(EY, 0, 1), END];
+      v.prev = [idxOf(EY - 1, 0, 1), idxOf(EY - 1, ed.getUTCMonth(), ed.getUTCDate())];
+      v.curLabel = 'Jan 1 – ' + fmtD(END, true) + ' (this year so far)';
+      v.prevLabel = 'the same dates last year';
+      v.per = 'year';
+    }
+    v.buckets = b;
+    v.days = v.cur[1] - v.cur[0] + 1;
+    return v;
+  }
+
+  // ================= Storage (per viewer, optional) =================
+  function load(key, fallback) { try { var s = localStorage.getItem(key); return s ? JSON.parse(s) : fallback; } catch (e) { return fallback; } }
+  function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* storage unavailable */ } }
+
+  // ================= State =================
+  var state = {
+    tab: 'websites',
+    view: load('aud-view', 'daily'),
+    site: 'all',
+    types: TYPES.map(function () { return true; }),
+    device: 'all',
+    country: 'all',
+    mode: 'chart',
+    added: load('aud-added', []),
+    connected: load('aud-connected', { instagram: true, facebook: true, youtube: true, linkedin: true, tiktok: false, x: true }),
+    settings: load('aud-settings', {}),
+    builder: 'html',
+    installSite: 'main',
+    live: {}
+  };
+  if (!/^(daily|weekly|monthly|yearly)$/.test(state.view)) state.view = 'daily';
+  var V = buildView(state.view);
+  SAMPLE.forEach(function (d) { state.live[d.id] = d.live; });
+
+  function allDomains() { return SAMPLE.concat(state.added); }
+  function domainById(id) { return allDomains().filter(function (d) { return d.id === id; })[0]; }
+
+  // ================= Helpers =================
+  var nf = new Intl.NumberFormat('en-US');
+  function fmt(n) { return nf.format(Math.round(n)); }
+  function fmtBig(n) { if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M'; if (n >= 1e5) return (n / 1e3).toFixed(1) + 'K'; return fmt(n); }
+  function fmtAxis(n) { if (n >= 1e6) return +(n / 1e6).toFixed(1) + 'M'; if (n >= 1e3) return +(n / 1e3).toFixed(1) + 'K'; return String(Math.round(n)); }
+  function change(c, p) { return p > 0 ? (c / p - 1) * 100 : null; }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var $ = function (id) { return document.getElementById(id); };
+  function setDelta(el, ch) {
+    el.textContent = ch === null ? 'New' : (ch >= 0 ? '▲ ' : '▼ ') + Math.abs(ch).toFixed(1) + '%';
+    el.className = 'delta ' + (ch === null || ch >= 0 ? 'up' : 'down');
+    el.setAttribute('aria-label', ch === null ? 'New' : (ch >= 0 ? 'Up ' : 'Down ') + Math.abs(ch).toFixed(1) + ' percent');
+  }
+  function miniDelta(ch) {
+    if (ch === null) return '<span class="mini up">New</span>';
+    return '<span class="mini ' + (ch >= 0 ? 'up' : 'down') + '" aria-label="' + (ch >= 0 ? 'Up ' : 'Down ') + Math.abs(ch).toFixed(0) + ' percent">' + (ch >= 0 ? '▲' : '▼') + ' ' + Math.abs(ch).toFixed(0) + '%</span>';
+  }
+  function rowHtml(nameHtml, value, ch, share, maxShare, color) {
+    return '<li class="row"><span class="rowname">' + nameHtml + '</span>' +
+      '<span class="rownums"><span class="v">' + fmt(value) + '</span>' + miniDelta(ch) + '</span>' +
+      '<span class="track"><span class="bar"><i style="width:' + (maxShare > 0 ? share / maxShare * 100 : 0).toFixed(1) + '%;--c:' + color + '"></i></span><span class="pct">' + share.toFixed(1) + '%</span></span></li>';
+  }
+  var toastTimer;
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 2600);
+  }
+  function copyText(text, fallbackEl) {
+    var done = function () { toast('Copied'); };
+    var fail = function () {
+      if (fallbackEl) { var r = document.createRange(); r.selectNodeContents(fallbackEl); var s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+      toast('Selected. Press Ctrl+C (or ⌘C) to copy.');
+    };
+    try { navigator.clipboard.writeText(text).then(done, fail); } catch (e) { fail(); }
+  }
+  function midY(range) { return yr((range[0] + range[1]) / 2); }
+
+  // ================= Stacked bar chart =================
+  function makeChart(host, liveEl, id, unit) {
+    var ch = { hover: null, data: null, geom: null };
+    function niceScale(max, ticks) {
+      var raw = max / ticks, mag = Math.pow(10, Math.floor(Math.log10(raw))), n = raw / mag;
+      var step = (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * mag;
+      return { step: step, top: step * Math.ceil(max / step) };
+    }
+    function draw() {
+      var d = ch.data; if (!d) return;
+      var W = Math.max(280, Math.round(host.clientWidth || 280)), narrow = W < 560, H = narrow ? 250 : 310;
+      var m = { l: 50, r: 8, t: 14, b: 36 }, pw = W - m.l - m.r, ph = H - m.t - m.b;
+      var bs = d.buckets, n = bs.length, band = pw / n, bw = Math.max(3, Math.min(band * .68, 72));
+      var tots = bs.map(function (_, i) { return d.series.reduce(function (s, x) { return s + x.vals[i]; }, 0); });
+      var max = Math.max.apply(null, tots);
+      if (!(max > 0)) { host.innerHTML = '<div class="chart-empty">' + esc(d.empty || 'Nothing to show yet.') + '</div>'; ch.geom = null; return; }
+      var sc = niceScale(max, narrow ? 3 : 4);
+      var Y = function (v) { return m.t + ph - v / sc.top * ph; };
+      var out = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><defs><pattern id="hatch-' + id + '" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" style="stroke:var(--surface);stroke-width:3"/></pattern></defs>';
+      for (var v = 0; v <= sc.top + 1e-9; v += sc.step) {
+        var yy = Y(v);
+        if (v > 0) out += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + yy + '" y2="' + yy + '"/>';
+        out += '<text class="ax" x="' + (m.l - 10) + '" y="' + (yy + 4) + '" text-anchor="end">' + fmtAxis(v) + '</text>';
+      }
+      bs.forEach(function (bk, i) {
+        var x0 = m.l + i * band + (band - bw) / 2;
+        out += '<g style="opacity:' + (ch.hover !== null && ch.hover !== i ? .32 : 1) + '">';
+        var segs = d.series.filter(function (s) { return s.vals[i] > 0; }), acc = 0;
+        segs.forEach(function (s, k) {
+          var yTop = Y(acc + s.vals[i]), yBot = Y(acc) - (k > 0 ? 2 : 0), h = Math.max(0, yBot - yTop);
+          var st = 'fill:var(' + s.c + ')';
+          if (k === segs.length - 1 && h > 0) {
+            var r = Math.min(4, bw / 2, h);
+            out += '<path style="' + st + '" d="M' + x0 + ',' + yBot + 'V' + (yTop + r) + 'Q' + x0 + ',' + yTop + ' ' + (x0 + r) + ',' + yTop + 'H' + (x0 + bw - r) + 'Q' + (x0 + bw) + ',' + yTop + ' ' + (x0 + bw) + ',' + (yTop + r) + 'V' + yBot + 'Z"/>';
+          } else if (h > 0) out += '<rect style="' + st + '" x="' + x0 + '" y="' + yTop + '" width="' + bw + '" height="' + h + '"/>';
+          acc += s.vals[i];
+        });
+        if (bk.partial && tots[i] > 0) out += '<rect x="' + x0 + '" y="' + Y(tots[i]) + '" width="' + bw + '" height="' + (Y(0) - Y(tots[i])) + '" fill="url(#hatch-' + id + ')"/>';
+        out += '</g>';
+      });
+      out += '<line class="base" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(0) + '" y2="' + Y(0) + '"/>';
+      var every = Math.max(1, Math.ceil(n / Math.max(1, Math.floor(pw / (narrow ? 58 : 66)))));
+      bs.forEach(function (bk, i) {
+        var show = (i % every === 0 && !(ch.hover !== null && i !== ch.hover && Math.abs(i - ch.hover) < every)) || i === ch.hover;
+        if (!show) return;
+        var st = i === ch.hover ? ' style="font-weight:800;fill:var(--ink)"' : '';
+        out += '<text class="ax"' + st + ' x="' + (m.l + i * band + band / 2) + '" y="' + (H - m.b + 22) + '" text-anchor="middle">' + esc(bk.label) + '</text>';
+      });
+      out += '</svg>';
+      if (ch.hover !== null) {
+        var hb = bs[ch.hover];
+        out += '<div class="tip" id="tip-' + id + '"><div class="t-date">' + esc(hb.full) + '</div><div class="t-total">' + fmt(tots[ch.hover]) + ' ' + unit + '</div>';
+        d.series.slice().reverse().forEach(function (s) {
+          out += '<div class="t-row"><span class="sw" style="--c:var(' + s.c + ')"></span><span>' + esc(s.name) + '</span><span>' + fmt(s.vals[ch.hover]) + '</span></div>';
+        });
+        out += '</div>';
+      }
+      host.innerHTML = out;
+      var tip = document.getElementById('tip-' + id);
+      if (tip) {
+        var cx = m.l + ch.hover * band + band / 2, tw = tip.offsetWidth, left = cx + 16;
+        if (left + tw > W) left = cx - 16 - tw;
+        tip.style.left = Math.max(0, left) + 'px';
+      }
+      ch.geom = { m: m, band: band, n: n };
+    }
+    function hoverAt(x) {
+      var g = ch.geom; if (!g) return;
+      var i = Math.floor((x - host.getBoundingClientRect().left - g.m.l) / g.band);
+      i = Math.min(g.n - 1, Math.max(0, i));
+      if (i !== ch.hover) { ch.hover = i; draw(); }
+    }
+    host.addEventListener('pointermove', function (e) { hoverAt(e.clientX); });
+    host.addEventListener('pointerdown', function (e) { hoverAt(e.clientX); });
+    host.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse' && ch.hover !== null) { ch.hover = null; draw(); } });
+    host.addEventListener('blur', function () { if (ch.hover !== null) { ch.hover = null; draw(); } });
+    host.addEventListener('keydown', function (e) {
+      if (!ch.geom) return;
+      var n = ch.data.buckets.length, h = ch.hover;
+      if (e.key === 'ArrowRight') h = h === null ? 0 : Math.min(n - 1, h + 1);
+      else if (e.key === 'ArrowLeft') h = h === null ? n - 1 : Math.max(0, h - 1);
+      else if (e.key === 'Home') h = 0;
+      else if (e.key === 'End') h = n - 1;
+      else if (e.key === 'Escape') h = null;
+      else return;
+      e.preventDefault(); ch.hover = h; draw();
+      if (h !== null) {
+        var bk = ch.data.buckets[h], t = ch.data.series.reduce(function (s, x) { return s + x.vals[h]; }, 0);
+        liveEl.textContent = bk.full + ': ' + fmt(t) + ' ' + unit + '. ' + ch.data.series.map(function (s) { return s.name + ' ' + fmt(s.vals[h]); }).join(', ') + '.';
+      }
+    });
+    if (window.ResizeObserver) {
+      var lastW = 0;
+      new ResizeObserver(function () { var w = host.clientWidth; if (w && w !== lastW) { lastW = w; draw(); } }).observe(host);
+    } else window.addEventListener('resize', draw);
+    return { set: function (d) { ch.data = d; if (ch.hover !== null && ch.hover >= d.buckets.length) ch.hover = null; draw(); }, draw: draw };
+  }
+  var wChart = makeChart($('w-chart'), $('w-live'), 'w', 'visits');
+  var sChart = makeChart($('s-chart'), $('s-live'), 's', 'views');
+
+  // ================= Tabs =================
+  var TABS = ['websites', 'social', 'install'];
+  function setTab(name, focus) {
+    state.tab = name;
+    TABS.forEach(function (t) {
+      var on = t === name, tab = $('tab-' + t);
+      tab.setAttribute('aria-selected', String(on));
+      tab.tabIndex = on ? 0 : -1;
+      $('panel-' + t).hidden = !on;
+      $('panel-' + t).style.display = on ? 'flex' : 'none';
+    });
+    if (focus) $('tab-' + name).focus();
+    renderTab();
+  }
+  TABS.forEach(function (t, i) {
+    $('tab-' + t).addEventListener('click', function () { setTab(t); });
+    $('tab-' + t).addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setTab(TABS[(i + (e.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length], true);
+      }
+    });
+  });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[href="#install"]');
+    if (a) { e.preventDefault(); setTab('install'); $('l-url').focus(); }
+  });
+
+  // ================= Period controls =================
+  function renderPeriod(hostId) {
+    $(hostId).innerHTML = PERIODS.map(function (p) {
+      return '<button type="button" data-view="' + p[0] + '" aria-pressed="' + (state.view === p[0]) + '">' + p[1] + '</button>';
+    }).join('');
+  }
+  ['w-period', 's-period'].forEach(function (hid) {
+    $(hid).addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-view]'); if (!b) return;
+      state.view = b.dataset.view; save('aud-view', state.view); V = buildView(state.view);
+      renderTab();
+      var again = $(hid).querySelector('[data-view="' + state.view + '"]'); if (again) again.focus();
+    });
+  });
+
+  // ================= WEBSITES =================
+  function activeDomains() {
+    if (state.site === 'all') return SAMPLE;
+    var d = domainById(state.site); return d ? [d] : SAMPLE;
+  }
+  function selTypes() { var o = []; state.types.forEach(function (on, i) { if (on) o.push(i); }); return o; }
+  function devFactor(dom) { return state.device === 'all' ? 1 : dom.dev[+state.device]; }
+  function ctyFactor(range) {
+    if (state.country === 'all') return 1;
+    var c = COUNTRIES.filter(function (x) { return x[0] === state.country; })[0];
+    if (c) return c[2](midY(range));
+    var y = midY(range); return 1 - COUNTRIES.reduce(function (s, x) { return s + x[2](y); }, 0);
+  }
+  function typeTotals(range, doms) {
+    var out = TYPES.map(function () { return 0; }), cf = ctyFactor(range);
+    doms.forEach(function (dom) {
+      var f = devFactor(dom) * cf;
+      selTypes().forEach(function (ti) { out[ti] += tsum(dom, ti, range[0], range[1]) * f; });
+    });
+    return out;
+  }
+  function kpi(range, doms) {
+    var tt = typeTotals(range, doms), visits = 0, uniq = 0, pv = 0;
+    tt.forEach(function (v, ti) { visits += v; uniq += v * TYPES[ti].uniq; pv += v * TYPES[ti].pv; });
+    return { visits: visits, uniq: uniq * UNIQ[state.view], pv: pv, tt: tt };
+  }
+  function platformTotals(range, doms, onlyTypes) {
+    var out = {}, y = midY(range), cf = ctyFactor(range);
+    doms.forEach(function (dom) {
+      var f = devFactor(dom) * cf;
+      (onlyTypes || selTypes()).forEach(function (ti) {
+        var tot = tsum(dom, ti, range[0], range[1]) * f;
+        platWeights(dom.id, TYPES[ti].id, y).forEach(function (pw) { out[pw.p.id] = (out[pw.p.id] || 0) + tot * pw.w; });
+      });
+    });
+    return out;
+  }
+
+  function renderSites() {
+    var cur = V.cur, html = '';
+    var cards = [{ id: 'all', host: 'All websites', doms: SAMPLE }].concat(allDomains().map(function (d) { return { id: d.id, host: d.host, doms: [d], dom: d }; }));
+    cards.forEach(function (c) {
+      var hasData = c.doms.some(function (d) { return d.pre; });
+      var total = 0, spark = [];
+      if (hasData) {
+        c.doms.forEach(function (d) { TYPES.forEach(function (t, ti) { total += tsum(d, ti, cur[0], cur[1]); }); });
+        for (var i = END - 13; i <= END; i++) {
+          var dv = 0; c.doms.forEach(function (d) { TYPES.forEach(function (t, ti) { dv += tsum(d, ti, i, i); }); });
+          spark.push(dv);
+        }
+      }
+      var pressed = state.site === c.id;
+      var status = c.id === 'all' ? '<span class="status live">' + SAMPLE.length + ' live</span>'
+        : hasData ? (state.settings[c.id] && state.settings[c.id].pause ? '<span class="status wait">Paused</span>' : '<span class="status live">Live</span>')
+        : '<span class="status wait">Waiting</span>';
+      var sparkSvg = '';
+      if (spark.length) {
+        var mx = Math.max.apply(null, spark), mn = Math.min.apply(null, spark), pts = spark.map(function (v, i) { return (i / (spark.length - 1) * 200).toFixed(1) + ',' + (30 - (v - mn) / Math.max(1, mx - mn) * 26).toFixed(1); }).join(' ');
+        sparkSvg = '<svg viewBox="0 0 200 34" preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts + '" fill="none" style="stroke:' + (pressed ? 'var(--accent)' : 'var(--t-direct)') + ';stroke-width:2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+      }
+      html += '<button type="button" class="site" data-site="' + esc(c.id) + '" aria-pressed="' + pressed + '">' +
+        '<span class="s-top"><span class="s-host">' + esc(c.host) + '</span>' + status + '</span>' +
+        (hasData ? '<span class="s-num">' + fmtBig(total) + '</span><span class="s-sub">visits, ' + esc(V.view === 'yearly' ? 'this year' : V.view === 'daily' ? 'last 30 days' : V.view === 'weekly' ? 'last 12 weeks' : 'last 12 months') + '</span>' + sparkSvg
+          : '<span class="s-sub">No visits yet. Add the code to start counting.</span>') +
+        '</button>';
+    });
+    html += '<button type="button" class="site add" id="add-card"><span class="plus" aria-hidden="true">+</span>Add website</button>';
+    $('sites').innerHTML = html;
+  }
+  $('sites').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'add-card') { openModal(); return; }
+    state.site = b.dataset.site; renderWebsites();
+    var again = $('sites').querySelector('[data-site="' + CSS.escape(state.site) + '"]'); if (again) again.focus();
+  });
+
+  function renderTypeChips() {
+    $('w-types').innerHTML = TYPES.map(function (t, i) {
+      return '<button type="button" class="chip" data-i="' + i + '" aria-pressed="' + state.types[i] + '" style="--c:var(' + t.c + ')"><span class="sw" aria-hidden="true"></span>' + esc(t.name) + '</button>';
+    }).join('') + (state.types.every(Boolean) ? '' : '<button type="button" class="chip" id="types-all"><b>Show all</b></button>');
+  }
+  $('w-types').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'types-all') state.types = TYPES.map(function () { return true; });
+    else {
+      var i = +b.dataset.i;
+      if (state.types[i] && state.types.filter(Boolean).length === 1) return;
+      state.types[i] = !state.types[i];
+    }
+    renderWebsites();
+    var again = b.id === 'types-all' ? $('w-types').querySelector('[data-i="0"]') : $('w-types').querySelector('[data-i="' + b.dataset.i + '"]');
+    if (again) again.focus();
+  });
+  (function fillCountries() {
+    $('w-country').innerHTML = '<option value="all">All countries</option>' + COUNTRIES.map(function (c) { return '<option value="' + c[0] + '">' + esc(c[1]) + '</option>'; }).join('') + '<option value="rest">All other countries</option>';
+  })();
+  $('w-device').addEventListener('change', function () { state.device = this.value; renderWebsites(); });
+  $('w-country').addEventListener('change', function () { state.country = this.value; renderWebsites(); });
+  $('w-m-chart').addEventListener('click', function () { setWMode('chart'); });
+  $('w-m-table').addEventListener('click', function () { setWMode('table'); });
+  function setWMode(m) {
+    state.mode = m;
+    $('w-m-chart').setAttribute('aria-pressed', String(m === 'chart'));
+    $('w-m-table').setAttribute('aria-pressed', String(m === 'table'));
+    $('w-chart').hidden = m !== 'chart'; $('w-table').hidden = m !== 'table';
+    renderWChart();
+  }
+
+  function renderWChart() {
+    var doms = activeDomains(), cf, st = selTypes();
+    $('w-chart-title').textContent = 'Visits per ' + V.per;
+    $('w-chart-note').hidden = state.view !== 'yearly';
+    var series = st.map(function (ti) {
+      return { name: TYPES[ti].name, c: TYPES[ti].c, vals: V.buckets.map(function (bk) {
+        cf = ctyFactor([bk.a, bk.b]);
+        return doms.reduce(function (s, d) { return s + tsum(d, ti, bk.a, bk.b) * devFactor(d) * cf; }, 0);
+      }) };
+    });
+    if (state.mode === 'chart') { wChart.set({ buckets: V.buckets, series: series, empty: 'No visits yet.' }); return; }
+    var html = '<table><thead><tr><th scope="col">Period</th>' + series.map(function (s) { return '<th scope="col">' + esc(s.name) + '</th>'; }).join('') + '<th scope="col">Total</th></tr></thead><tbody>';
+    var colT = series.map(function () { return 0; }), grand = 0;
+    for (var i = V.buckets.length - 1; i >= 0; i--) {
+      var t = 0; html += '<tr><td>' + esc(V.buckets[i].full) + '</td>';
+      series.forEach(function (s, k) { t += s.vals[i]; colT[k] += s.vals[i]; html += '<td>' + fmt(s.vals[i]) + '</td>'; });
+      grand += t; html += '<td><b>' + fmt(t) + '</b></td></tr>';
+    }
+    html += '</tbody><tfoot><tr><td>All shown</td>' + colT.map(function (v) { return '<td>' + fmt(v) + '</td>'; }).join('') + '<td>' + fmt(grand) + '</td></tr></tfoot></table>';
+    $('w-table').innerHTML = html;
+  }
+
+  function renderWebsites() {
+    renderPeriod('w-period');
+    renderSites();
+    var sel = state.site !== 'all' ? domainById(state.site) : null;
+    var waiting = sel && !sel.pre;
+    $('w-title').textContent = sel ? 'Traffic for ' + sel.host : 'Your website traffic';
+    $('w-waiting').hidden = !waiting;
+    $('w-body').style.display = waiting ? 'none' : 'flex';
+    if (waiting) {
+      $('w-waiting').innerHTML = '<div class="waiting"><div><h2>Waiting for the first visit</h2><p>Add the tracking code to ' + esc(sel.host) + '. Visits show up here about a minute after someone opens the site.</p></div><button type="button" class="btn primary" id="w-goto-code">Get the code</button></div>';
+      $('w-goto-code').addEventListener('click', function () { state.installSite = sel.id; setTab('install'); });
+      $('w-insight').textContent = 'No visits yet for this website.';
+      return;
+    }
+    renderTypeChips();
+    var doms = activeDomains();
+    var cur = kpi(V.cur, doms), prev = kpi(V.prev, doms);
+    $('w-range').innerHTML = 'Showing <b>' + esc(V.curLabel) + '</b> · changes compared with ' + esc(V.prevLabel);
+    $('k-visits').textContent = fmtBig(cur.visits); $('k-visits').title = fmt(cur.visits);
+    $('k-uniq').textContent = fmtBig(cur.uniq); $('k-uniq').title = fmt(cur.uniq);
+    $('k-pv').textContent = fmtBig(cur.pv); $('k-pv').title = fmt(cur.pv);
+    setDelta($('d-visits'), change(cur.visits, prev.visits));
+    setDelta($('d-uniq'), change(cur.uniq, prev.uniq));
+    setDelta($('d-pv'), change(cur.pv, prev.pv));
+    renderLive();
+    renderWChart();
+
+    // platforms
+    var pc = platformTotals(V.cur, doms), pp = platformTotals(V.prev, doms);
+    var keys = Object.keys(pc).filter(function (k) { return pc[k] >= .5; }).sort(function (a, b) { return pc[b] - pc[a]; });
+    var maxS = keys.length ? pc[keys[0]] / cur.visits * 100 : 1;
+    var top10 = keys.slice(0, 10);
+    $('w-platforms').innerHTML = top10.map(function (k) {
+      var p = PLATFORMS.filter(function (x) { return x.id === k; })[0], c = 'var(' + TYPES[TI[p.type]].c + ')';
+      return rowHtml('<span class="sw" style="--c:' + c + '" title="' + esc(TYPES[TI[p.type]].name) + '"></span><span class="txt">' + esc(p.name) + '</span>', pc[k], change(pc[k], pp[k] || 0), pc[k] / cur.visits * 100, maxS, c);
+    }).join('') || '<li class="empty">No visits for this filter.</li>';
+
+    // insight
+    if (top10.length) {
+      var tp = PLATFORMS.filter(function (x) { return x.id === top10[0]; })[0];
+      var fast = null, fastCh = 0;
+      keys.forEach(function (k) { var c2 = change(pc[k], pp[k] || 0); if (c2 !== null && pc[k] / cur.visits > .03 && c2 > fastCh) { fastCh = c2; fast = k; } });
+      var where = sel ? sel.host : 'your websites';
+      var txt = '<b>' + esc(tp.name) + '</b> sent the most visits to ' + esc(where) + ' (' + Math.round(pc[top10[0]] / cur.visits * 100) + '%).';
+      if (fast && fast !== top10[0]) txt += ' <b>' + esc(PLATFORMS.filter(function (x) { return x.id === fast; })[0].name) + '</b> grew the fastest, up ' + fastCh.toFixed(0) + '%.';
+      $('w-insight').innerHTML = txt;
+    }
+
+    // pages
+    var pageRows = [], y = midY(V.cur), yp = midY(V.prev), cf = ctyFactor(V.cur), cfp = ctyFactor(V.prev);
+    doms.forEach(function (d) {
+      var vC = 0, vP = 0;
+      selTypes().forEach(function (ti) { vC += tsum(d, ti, V.cur[0], V.cur[1]) * TYPES[ti].pv; vP += tsum(d, ti, V.prev[0], V.prev[1]) * TYPES[ti].pv; });
+      vC *= devFactor(d) * cf; vP *= devFactor(d) * cfp;
+      d.pages.forEach(function (pg, k) {
+        var drift = 1 + .04 * Math.sin(k * 2 + y * 3), driftP = 1 + .04 * Math.sin(k * 2 + yp * 3);
+        pageRows.push({ name: (doms.length > 1 ? '<span class="host">' + esc(d.host) + '</span>' : '') + esc(pg[0]), c: vC * pg[1] * drift, p: vP * pg[1] * driftP });
+      });
+    });
+    pageRows.sort(function (a, b) { return b.c - a.c; });
+    var totalPv = cur.pv, pgMax = pageRows.length ? pageRows[0].c / totalPv * 100 : 1;
+    $('w-pages').innerHTML = pageRows.slice(0, 8).map(function (r) {
+      return rowHtml('<span class="txt">' + r.name + '</span>', r.c, change(r.c, r.p), r.c / totalPv * 100, pgMax, 'var(--single)');
+    }).join('');
+
+    // campaigns
+    var allTypes = TYPES.map(function (_, i) { return i; });
+    var pcA = platformTotals(V.cur, doms, allTypes), ppA = platformTotals(V.prev, doms, allTypes);
+    var camp = CAMPAIGNS.filter(function (c) {
+      var p = PLATFORMS.filter(function (x) { return x.id === c[1]; })[0]; return state.types[TI[p.type]];
+    }).map(function (c, k) {
+      var drift = 1 + .08 * Math.sin(k + midY(V.cur) * 4), driftP = 1 + .08 * Math.sin(k + midY(V.prev) * 4);
+      return { c: c, v: (pcA[c[1]] || 0) * c[2] * drift, p: (ppA[c[1]] || 0) * c[2] * driftP };
+    }).sort(function (a, b) { return b.v - a.v; });
+    var cMax = camp.length ? camp[0].v / cur.visits * 100 : 1;
+    $('w-campaigns').innerHTML = camp.length ? camp.map(function (r) {
+      var p = PLATFORMS.filter(function (x) { return x.id === r.c[1]; })[0];
+      return rowHtml('<span class="sw" style="--c:var(' + TYPES[TI[p.type]].c + ')"></span><span class="txt">' + esc(r.c[0]) + ' <span class="host">· ' + esc(p.name) + '</span></span>', r.v, change(r.v, r.p), r.v / cur.visits * 100, cMax, 'var(' + TYPES[TI[p.type]].c + ')');
+    }).join('') : '<li class="empty">No tagged links for the traffic types shown.</li>';
+
+    // countries
+    var save1 = state.country; state.country = 'all';
+    var base = kpi(V.cur, doms).visits, baseP = kpi(V.prev, doms).visits;
+    state.country = save1;
+    var crs = COUNTRIES.map(function (c) { return { code: c[0], name: c[1], v: base * c[2](y), p: baseP * c[2](yp) }; });
+    var restV = base - crs.reduce(function (s, r) { return s + r.v; }, 0), restP = baseP - crs.reduce(function (s, r) { return s + r.p; }, 0);
+    crs.sort(function (a, b) { return b.v - a.v; });
+    crs.push({ code: '··', name: 'All other countries', v: restV, p: restP });
+    var crMax = Math.max.apply(null, crs.map(function (r) { return r.v; })) / base * 100;
+    $('w-countries').innerHTML = crs.map(function (r) {
+      var on = state.country === 'all' || state.country === r.code || (state.country === 'rest' && r.code === '··');
+      return rowHtml('<span class="code-chip">' + esc(r.code) + '</span><span class="txt"' + (on ? '' : ' style="opacity:.55"') + '>' + esc(r.name) + '</span>', r.v, change(r.v, r.p), r.v / base * 100, crMax, 'var(--single)');
+    }).join('');
+
+    // devices
+    var saveD = state.device; state.device = 'all';
+    var devRows = DEVICES.map(function (name, di) {
+      var v = 0, p = 0;
+      doms.forEach(function (d) {
+        var cfx = ctyFactor(V.cur), cfpx = ctyFactor(V.prev);
+        selTypes().forEach(function (ti) { v += tsum(d, ti, V.cur[0], V.cur[1]) * d.dev[di] * cfx; p += tsum(d, ti, V.prev[0], V.prev[1]) * d.dev[di] * cfpx * (di === 0 ? .96 : 1.03); });
+      });
+      return { name: name, v: v, p: p, di: di };
+    });
+    state.device = saveD;
+    var dTot = devRows.reduce(function (s, r) { return s + r.v; }, 0), dMax = Math.max.apply(null, devRows.map(function (r) { return r.v; })) / dTot * 100;
+    $('w-devices').innerHTML = devRows.map(function (r) {
+      var on = state.device === 'all' || +state.device === r.di;
+      return rowHtml('<span class="txt"' + (on ? '' : ' style="opacity:.55"') + '>' + esc(r.name) + '</span>', r.v, change(r.v, r.p), r.v / dTot * 100, dMax, 'var(--single)');
+    }).join('');
+  }
+
+  function renderLive() {
+    var doms = activeDomains(), n = 0;
+    doms.forEach(function (d) { n += state.live[d.id] || 0; });
+    $('k-live').textContent = fmt(n);
+  }
+  setInterval(function () {
+    SAMPLE.forEach(function (d, i) {
+      var step = Math.round((Math.random() - .5) * 3);
+      state.live[d.id] = Math.max(1, Math.min(d.live * 2, state.live[d.id] + step));
+    });
+    if (state.tab === 'websites' && !$('k-live').closest('[hidden]')) renderLive();
+  }, 5000);
+
+  // ================= SOCIAL =================
+  function connectedList() { return SOCIAL.filter(function (s) { return state.connected[s.id]; }); }
+  function socialVisits(range, ids) {
+    var tot = 0, y = midY(range);
+    SAMPLE.forEach(function (dom) {
+      var t = tsum(dom, TI.social, range[0], range[1]);
+      platWeights(dom.id, 'social', y).forEach(function (pw) { if (ids.indexOf(pw.p.id) >= 0) tot += t * pw.w; });
+    });
+    return tot;
+  }
+  function renderSocial() {
+    renderPeriod('s-period');
+    var con = connectedList(), ids = con.map(function (s) { return s.id; });
+    $('s-range').innerHTML = 'Showing <b>' + esc(V.curLabel) + '</b> · changes compared with ' + esc(V.prevLabel);
+    var fNow = 0, fPrevEnd = 0, newC = 0, newP = 0, vC = 0, vP = 0;
+    con.forEach(function (s) {
+      fNow += followersAt(s, V.cur[1]); fPrevEnd += followersAt(s, V.prev[1]);
+      newC += followersAt(s, V.cur[1]) - followersAt(s, V.cur[0] - 1);
+      newP += followersAt(s, V.prev[1]) - followersAt(s, V.prev[0] - 1);
+      vC += viewsSum(s, V.cur[0], V.cur[1]); vP += viewsSum(s, V.prev[0], V.prev[1]);
+    });
+    var visC = socialVisits(V.cur, ids), visP = socialVisits(V.prev, ids);
+    $('sk-followers').textContent = fmtBig(fNow); setDelta($('sd-followers'), change(fNow, fPrevEnd));
+    $('sk-new').textContent = fmtBig(newC); setDelta($('sd-new'), change(newC, newP));
+    $('sk-views').textContent = fmtBig(vC); setDelta($('sd-views'), change(vC, vP));
+    $('sk-visits').textContent = fmtBig(visC); setDelta($('sd-visits'), change(visC, visP));
+
+    // cards
+    var best = null, bestRate = -1;
+    var rows = con.map(function (s) {
+      var views = viewsSum(s, V.cur[0], V.cur[1]), visits = socialVisits(V.cur, [s.id]);
+      var rate = views > 0 ? visits / views * 1000 : 0;
+      if (rate > bestRate) { bestRate = rate; best = s.id; }
+      return { s: s, views: views, visits: visits, rate: rate, gained: followersAt(s, V.cur[1]) - followersAt(s, V.cur[0] - 1), viewsP: viewsSum(s, V.prev[0], V.prev[1]), visitsP: socialVisits(V.prev, [s.id]) };
+    });
+    var html = SOCIAL.map(function (s) {
+      if (!state.connected[s.id]) {
+        return '<div class="soc off"><div class="soc-top"><span class="soc-name"><span class="sw" style="--c:var(' + s.c + ')"></span>' + esc(s.name) + '</span><span class="status wait">Not connected</span></div>' +
+          '<p class="soc-what">' + esc(s.what) + '</p><div><button type="button" class="btn primary" data-connect="' + s.id + '">Connect ' + esc(s.name) + '</button></div></div>';
+      }
+      var r = rows.filter(function (x) { return x.s.id === s.id; })[0];
+      var gained = r.gained;
+      return '<div class="soc"><div class="soc-top"><span class="soc-name"><span class="sw" style="--c:var(' + s.c + ')"></span><span>' + esc(s.name) + '<br><span class="soc-handle">@mybrand</span></span></span><span class="status live">Connected</span></div>' +
+        '<div><div class="soc-big">' + fmt(followersAt(s, V.cur[1])) + '</div><div class="soc-handle">' + (s.id === 'youtube' ? 'subscribers' : 'followers') + ' · <b style="color:var(--ink)">' + (gained >= 0 ? '+' : '−') + fmt(Math.abs(gained)) + '</b> in this period</div></div>' +
+        '<div class="soc-stats"><div><span>Views</span><b>' + fmtBig(r.views) + '</b></div><div><span>Engagement</span><b>' + (s.er * (1 + .05 * Math.sin(midY(V.cur) * 5 + s.f0))).toFixed(1) + '%</b></div><div><span>Site visits</span><b>' + fmtBig(r.visits) + '</b></div></div>' +
+        '<p class="soc-what">' + esc(s.what) + '</p>' +
+        '<div><button type="button" class="btn danger" data-disconnect="' + s.id + '">Disconnect</button></div></div>';
+    }).join('');
+    $('socials').innerHTML = html;
+
+    // insight
+    if (rows.length) {
+      var bv = rows.slice().sort(function (a, b) { return b.views - a.views; })[0];
+      var bs = rows.filter(function (r) { return r.s.id === best; })[0];
+      var txt = '<b>' + esc(bv.s.name) + '</b> got the most views.';
+      if (bs && bs.s.id !== bv.s.id) txt += ' <b>' + esc(bs.s.name) + '</b> turns views into website visits best: ' + bs.rate.toFixed(1) + ' visits per 1,000 views.';
+      else if (bs) txt += ' It also sends the most visits per view: ' + bs.rate.toFixed(1) + ' per 1,000 views.';
+      $('s-insight').innerHTML = txt;
+    } else $('s-insight').textContent = 'Connect a social account to see its audience here.';
+
+    // legend + chart
+    $('s-chart-title').textContent = 'Post views per ' + V.per;
+    $('s-legend').innerHTML = con.map(function (s) { return '<span class="chip" style="--c:var(' + s.c + ');min-height:34px;box-shadow:none"><span class="sw" aria-hidden="true"></span>' + esc(s.name) + '</span>'; }).join('');
+    sChart.set({ buckets: V.buckets, series: con.map(function (s) { return { name: s.name, c: s.c, vals: V.buckets.map(function (bk) { return viewsSum(s, bk.a, bk.b); }) }; }), empty: 'Connect a social account to see views here.' });
+
+    // table
+    var t = '<table><thead><tr><th scope="col">Platform</th><th scope="col">Post views</th><th scope="col">Visits to your websites</th><th scope="col">Visits per 1,000 views</th><th scope="col">New followers</th></tr></thead><tbody>';
+    rows.slice().sort(function (a, b) { return b.rate - a.rate; }).forEach(function (r) {
+      t += '<tr><td><span class="sw" style="--c:var(' + r.s.c + ');margin-right:8px"></span>' + esc(r.s.name) + '</td><td>' + fmt(r.views) + '</td><td>' + fmt(r.visits) + '</td><td><b>' + r.rate.toFixed(1) + '</b>' + (r.s.id === best && rows.length > 1 ? '<span class="best">Best</span>' : '') + '</td><td>' + fmt(r.gained) + '</td></tr>';
+    });
+    t += '</tbody></table>';
+    $('s-table').innerHTML = rows.length ? t : '<p class="empty">No connected accounts yet.</p>';
+  }
+  $('socials').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var id = b.dataset.connect || b.dataset.disconnect; if (!id) return;
+    var s = SOCIAL.filter(function (x) { return x.id === id; })[0];
+    state.connected[id] = !!b.dataset.connect; save('aud-connected', state.connected);
+    renderSocial();
+    toast(b.dataset.connect ? s.name + ' connected (demo)' : s.name + ' disconnected');
+    var again = $('socials').querySelector('[data-connect="' + id + '"],[data-disconnect="' + id + '"]'); if (again) again.focus();
+  });
+
+  // ================= INSTALL =================
+  var TRACKER = 'https://[YOUR-TRACKER-DOMAIN]/t.js';
+  function snippet(dom, html) {
+    var line1 = '<!' + '-- [YOUR BRAND] traffic tracking for ' + dom.host + ' --' + '>';
+    var line2a = '<script defer data-site="', line2b = '" src="' + TRACKER + '"></' + 'script>';
+    if (!html) return line1 + '\n' + line2a + dom.site + line2b;
+    return esc(line1) + '\n' + esc(line2a) + '<span class="hl">' + esc(dom.site) + '</span>' + esc(line2b);
+  }
+  var BUILDERS = [
+    ['html', 'Any website', [
+      'Open the template that every page uses (often called header, layout or base).',
+      'Paste the code just before the closing <code>&lt;/head&gt;</code> tag. The footer, before <code>&lt;/body&gt;</code>, works too.',
+      'Save and publish your site.'
+    ]],
+    ['wordpress', 'WordPress', [
+      'Install a header and footer plugin, such as WPCode.',
+      'Open its Header &amp; Footer page and paste the code into the Header box.',
+      'Click Save.'
+    ]],
+    ['shopify', 'Shopify', [
+      'Go to Online Store → Themes, open the menu next to your theme and choose Edit code.',
+      'Open <code>layout/theme.liquid</code> and paste the code just before <code>&lt;/head&gt;</code>.',
+      'Click Save.'
+    ]],
+    ['webflow', 'Webflow', [
+      'Open Site settings → Custom code.',
+      'Paste the code into Head code.',
+      'Save, then publish the site.'
+    ]],
+    ['wix', 'Wix', [
+      'Open Settings → Custom code and click Add custom code.',
+      'Paste the code, choose All pages and place it in Head.',
+      'Click Apply.'
+    ]],
+    ['gtm', 'Google Tag Manager', [
+      'Create a new tag of type Custom HTML and paste the code.',
+      'Set the trigger to All Pages.',
+      'Submit and publish the container.'
+    ]]
+  ];
+  function renderInstall() {
+    var doms = allDomains();
+    if (!domainById(state.installSite)) state.installSite = doms[0].id;
+    $('i-site').innerHTML = doms.map(function (d) { return '<option value="' + esc(d.id) + '"' + (d.id === state.installSite ? ' selected' : '') + '>' + esc(d.host) + '</option>'; }).join('');
+    var dom = domainById(state.installSite);
+    $('i-code').innerHTML = snippet(dom, true);
+    $('i-siteid').innerHTML = 'Website ID: <b>' + esc(dom.site) + '</b>';
+    $('i-result').textContent = '';
+    $('i-builders').innerHTML = BUILDERS.map(function (b) { return '<button type="button" data-b="' + b[0] + '" aria-pressed="' + (state.builder === b[0]) + '">' + esc(b[1]) + '</button>'; }).join('');
+    var bd = BUILDERS.filter(function (b) { return b[0] === state.builder; })[0];
+    $('i-guide').innerHTML = bd[2].map(function (s) { return '<li>' + s + '</li>'; }).join('');
+    var st = state.settings[dom.id] || {};
+    $('i-self').checked = !!st.self; $('i-subs').checked = !!st.subs; $('i-pause').checked = !!st.pause;
+    $('i-settings-sub').textContent = 'For ' + dom.host;
+    $('i-remove').hidden = !!dom.sample;
+    renderLink();
+  }
+  $('i-site').addEventListener('change', function () { state.installSite = this.value; renderInstall(); });
+  $('i-builders').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-b]'); if (!b) return;
+    state.builder = b.dataset.b; renderInstall();
+    var again = $('i-builders').querySelector('[data-b="' + state.builder + '"]'); if (again) again.focus();
+  });
+  $('i-copy').addEventListener('click', function () { copyText(snippet(domainById(state.installSite), false), $('i-code')); });
+  $('i-check').addEventListener('click', function () {
+    var dom = domainById(state.installSite), out = $('i-result');
+    out.textContent = 'Checking…';
+    setTimeout(function () {
+      if (dom.pre && !(state.settings[dom.id] || {}).pause) out.textContent = '✓ Working. Last visit about a minute ago.';
+      else if (dom.pre) out.textContent = 'Tracking is paused for this website.';
+      else out.textContent = 'No visits yet. Check the code is saved and published, then open your site once.';
+    }, 700);
+  });
+  ['self', 'subs', 'pause'].forEach(function (k) {
+    $('i-' + k).addEventListener('change', function () {
+      var id = state.installSite; state.settings[id] = state.settings[id] || {};
+      state.settings[id][k] = this.checked; save('aud-settings', state.settings);
+      toast(k === 'pause' ? (this.checked ? 'Tracking paused' : 'Tracking resumed') : 'Saved');
+    });
+  });
+  $('i-remove').addEventListener('click', function () {
+    var id = state.installSite, dom = domainById(id);
+    if (!dom || dom.sample) return;
+    state.added = state.added.filter(function (d) { return d.id !== id; }); save('aud-added', state.added);
+    if (state.site === id) state.site = 'all';
+    state.installSite = 'main';
+    renderInstall(); toast(dom.host + ' removed');
+  });
+  $('i-add').addEventListener('click', function () { openModal(); });
+
+  function renderLink() {
+    var url = $('l-url').value.trim(), plat = $('l-platform').value, camp = $('l-campaign').value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'campaign';
+    var medium = plat === 'newsletter' ? 'email' : 'social';
+    var out;
+    try {
+      var u = new URL(/^https?:\/\//i.test(url) ? url : 'https://' + url);
+      u.searchParams.set('utm_source', plat); u.searchParams.set('utm_medium', medium); u.searchParams.set('utm_campaign', camp);
+      out = u.toString();
+    } catch (e) { out = 'Enter a full page link, like https://mybrand.com/sale'; }
+    $('l-out').textContent = out;
+  }
+  ['l-url', 'l-platform', 'l-campaign'].forEach(function (id) { $(id).addEventListener('input', renderLink); $(id).addEventListener('change', renderLink); });
+  $('l-copy').addEventListener('click', function () { copyText($('l-out').textContent, $('l-out')); });
+
+  // ================= Add website modal =================
+  var lastFocus = null, newDom = null;
+  function openModal() {
+    lastFocus = document.activeElement; newDom = null;
+    $('m-step1').hidden = false; $('m-step1').style.display = 'flex';
+    $('m-step2').hidden = true; $('m-step2').style.display = 'none';
+    $('m-s1').className = 'on'; $('m-s2').className = '';
+    $('m-domain').value = ''; $('m-err').hidden = true; $('m-domain').removeAttribute('aria-invalid');
+    $('modal').hidden = false;
+    setTimeout(function () { $('m-domain').focus(); }, 0);
+  }
+  function closeModal() { $('modal').hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+  function cleanHost(v) {
+    v = v.trim().toLowerCase().replace(/^[a-z]+:\/\//, '').split(/[\/?#]/)[0].replace(/:\d+$/, '').replace(/\.$/, '');
+    return v;
+  }
+  $('m-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var host = cleanHost($('m-domain').value), err = '';
+    if (!host) err = 'Type your website address, like shop.example.com.';
+    else if (!/^(?=.{4,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(host)) err = '"' + host + '" doesn\'t look like a website address. Try something like shop.example.com.';
+    else if (allDomains().some(function (d) { return d.host === host; })) err = host + ' is already in your list.';
+    if (err) { $('m-err').textContent = err; $('m-err').hidden = false; $('m-domain').setAttribute('aria-invalid', 'true'); $('m-domain').focus(); return; }
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', id = 'mb_';
+    for (var i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
+    newDom = { id: 'u_' + Date.now().toString(36), host: host, site: id, dev: [.6, .35, .05], pages: [] };
+    state.added.push(newDom); save('aud-added', state.added);
+    $('m-host').textContent = host;
+    $('m-code').innerHTML = snippet(newDom, true);
+    $('m-step1').hidden = true; $('m-step1').style.display = 'none';
+    $('m-step2').hidden = false; $('m-step2').style.display = 'flex';
+    $('m-s1').className = ''; $('m-s2').className = 'on';
+    $('m-copy').focus();
+    renderTab();
+  });
+  $('m-cancel').addEventListener('click', closeModal);
+  $('m-copy').addEventListener('click', function () { copyText(snippet(newDom, false), $('m-code')); });
+  $('m-done').addEventListener('click', function () { closeModal(); state.site = newDom.id; if (state.tab === 'websites') renderWebsites(); toast(newDom.host + ' added'); });
+  $('m-guide').addEventListener('click', function () { closeModal(); state.installSite = newDom.id; setTab('install'); });
+  $('modal').addEventListener('click', function (e) { if (e.target === $('modal')) closeModal(); });
+  document.addEventListener('keydown', function (e) {
+    if ($('modal').hidden) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === 'Tab') {
+      var f = Array.prototype.filter.call($('modal').querySelectorAll('button, input'), function (el) { return el.offsetParent !== null; });
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+
+  // ================= Boot =================
+  function renderTab() {
+    if (state.tab === 'websites') renderWebsites();
+    else if (state.tab === 'social') renderSocial();
+    else renderInstall();
+  }
+  var startTab = (location.hash || '').replace('#', '');
+  setTab(TABS.indexOf(startTab) >= 0 ? startTab : 'websites');
+})();
+</script>
+
+</body>
+</html>

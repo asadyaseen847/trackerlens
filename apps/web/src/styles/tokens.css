@@ -1,0 +1,123 @@
+/* Copied verbatim from docs/design/prototype.html (:root + both dark-mode blocks). Keep in sync; do not edit values here. */
+:root {
+  --bg: #f3f0ff;
+  --surface: #ffffff;
+  --ink: #16131f;
+  --muted: #5b5670;
+  --faint: #6e6985;
+  --line: #e6e2f3;
+  --track: #efebfa;
+  --border: #16131f;
+  --shadow: #16131f;
+  --accent: #c8f542;
+  --on-accent: #16131f;
+  --good: #e3fbb0;
+  --bad: #ffd6cf;
+  --wait: #ffe9b8;
+  --tip-bg: #16131f;
+  --tip-fg: #ffffff;
+  --tip-muted: #c9c4dc;
+  --pressed-bg: #16131f;
+  --pressed-fg: #ffffff;
+  --focus: #2f6bff;
+  --single: #16131f;
+  --overlay: rgba(22, 19, 31, 0.55);
+  --code-bg: #16131f;
+  --code-fg: #f5f3ff;
+  --code-accent: #c8f542;
+  /* channel types on the website chart */
+  --t-social: #ff3d8b;
+  --t-search: #2f6bff;
+  --t-email: #e86a00;
+  --t-ai: #6c3cf5;
+  --t-direct: #0e9f92;
+  --t-other: #bdb7cc;
+  /* social platforms on the social chart */
+  --p1: #ff3d8b;
+  --p2: #2f6bff;
+  --p3: #e86a00;
+  --p4: #6c3cf5;
+  --p5: #0e9f92;
+  --p6: #a38200;
+  --font-display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
+  --font-body: 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-code: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #120f1a;
+    --surface: #1d1928;
+    --ink: #f5f3ff;
+    --muted: #b8b3cc;
+    --faint: #a49fb9;
+    --line: #2e2840;
+    --track: #2a2438;
+    --border: #e9e5f7;
+    --shadow: #5b4bc4;
+    --good: #35511a;
+    --bad: #5a2430;
+    --wait: #5a4515;
+    --tip-bg: #f5f3ff;
+    --tip-fg: #16131f;
+    --tip-muted: #5b5670;
+    --pressed-bg: #f5f3ff;
+    --pressed-fg: #16131f;
+    --focus: #5b8bff;
+    --single: #e9e5f7;
+    --overlay: rgba(0, 0, 0, 0.65);
+    --code-bg: #0b0911;
+    --code-fg: #f5f3ff;
+    --code-accent: #c8f542;
+    --t-social: #f0458c;
+    --t-search: #5b8bff;
+    --t-email: #e0731c;
+    --t-ai: #9a75ff;
+    --t-direct: #14a596;
+    --t-other: #5e5872;
+    --p1: #f0458c;
+    --p2: #5b8bff;
+    --p3: #e0731c;
+    --p4: #9a75ff;
+    --p5: #14a596;
+    --p6: #a88a0c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme='dark'] {
+  --bg: #120f1a;
+  --surface: #1d1928;
+  --ink: #f5f3ff;
+  --muted: #b8b3cc;
+  --faint: #a49fb9;
+  --line: #2e2840;
+  --track: #2a2438;
+  --border: #e9e5f7;
+  --shadow: #5b4bc4;
+  --good: #35511a;
+  --bad: #5a2430;
+  --wait: #5a4515;
+  --tip-bg: #f5f3ff;
+  --tip-fg: #16131f;
+  --tip-muted: #5b5670;
+  --pressed-bg: #f5f3ff;
+  --pressed-fg: #16131f;
+  --focus: #5b8bff;
+  --single: #e9e5f7;
+  --overlay: rgba(0, 0, 0, 0.65);
+  --code-bg: #0b0911;
+  --code-fg: #f5f3ff;
+  --code-accent: #c8f542;
+  --t-social: #f0458c;
+  --t-search: #5b8bff;
+  --t-email: #e0731c;
+  --t-ai: #9a75ff;
+  --t-direct: #14a596;
+  --t-other: #5e5872;
+  --p1: #f0458c;
+  --p2: #5b8bff;
+  --p3: #e0731c;
+  --p4: #9a75ff;
+  --p5: #14a596;
+  --p6: #a88a0c;
+  color-scheme: dark;
+}

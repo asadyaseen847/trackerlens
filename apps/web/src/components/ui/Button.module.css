@@ -1,0 +1,44 @@
+.btn {
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn:hover {
+  filter: brightness(0.97);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn svg {
+  stroke: currentColor;
+  flex: none;
+}
+
+.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 3px 3px 0 var(--shadow);
+}
+
+.dark {
+  background: var(--pressed-bg);
+  color: var(--pressed-fg);
+}
+
+.danger {
+  border-style: dashed;
+}

@@ -1,0 +1,10 @@
+node_modules
+dist
+apps/web/public/js
+playwright-report
+test-results
+.vercel
+package-lock.json
+docs/BUILD_PROMPT.md
+docs/SCAFFOLD_PROMPT.md
+docs/design

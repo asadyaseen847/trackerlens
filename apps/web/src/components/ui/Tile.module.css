@@ -1,0 +1,46 @@
+.tile {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 5px 5px 0 var(--shadow);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.hot {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.lab {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hot .lab {
+  color: var(--on-accent);
+}
+
+/* On the lime tile the change chip is always white with ink text, in both themes. */
+.hot [data-delta] {
+  background: #ffffff;
+  color: #16131f;
+  border-color: #16131f;
+}
+
+.num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(26px, 3vw, 32px);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,29 @@
+.status {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+}
+
+.live::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--t-direct);
+}
+
+.waiting {
+  background: var(--wait);
+  color: var(--ink);
+  border-color: var(--border);
+}
+
+.paused {
+  border-style: dashed;
+}

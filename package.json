@@ -1,0 +1,44 @@
+{
+  "name": "audience-tracker",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "packages/shared",
+    "packages/tracker",
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "postinstall": "npm run build -w @audience/shared",
+    "dev": "concurrently -k -n shared,api,web -c magenta,blue,green \"npm run dev -w @audience/shared\" \"npm run dev -w @audience/api\" \"npm run dev -w @audience/web\"",
+    "build": "npm run build -w @audience/shared && npm run build:tracker && npm run build -w @audience/web && npm run build -w @audience/api",
+    "build:tracker": "npm run build -w @audience/tracker",
+    "typecheck": "tsc -p tsconfig.json && npm run typecheck --workspaces --if-present",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "playwright test -c e2e/playwright.config.ts",
+    "seed": "tsx --env-file-if-exists=apps/api/.env scripts/seed.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^22.20.5",
+    "concurrently": "^10.0.6",
+    "eslint": "9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^5.0.4"
+  }
+}
