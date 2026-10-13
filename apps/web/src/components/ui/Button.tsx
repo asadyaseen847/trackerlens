@@ -1,7 +1,7 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ComponentPropsWithRef } from 'react';
 import styles from './Button.module.css';
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends ComponentPropsWithRef<'button'> {
   /** "primary" is the lime button: only one lime element per screen (§12). */
   variant?: 'default' | 'primary' | 'dark' | 'danger';
 }

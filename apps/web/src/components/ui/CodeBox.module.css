@@ -17,6 +17,11 @@
   font: inherit;
 }
 
+.codebox pre.wrap {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 .hl {
   color: var(--code-accent);
 }

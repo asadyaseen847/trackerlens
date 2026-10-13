@@ -1,0 +1,31 @@
+.wrap {
+  width: min(640px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.steps li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+}
+
+.steps .on {
+  border-color: var(--border);
+  color: var(--ink);
+  background: var(--surface);
+}

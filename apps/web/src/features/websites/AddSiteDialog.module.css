@@ -1,0 +1,25 @@
+.steps {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.steps span {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+}
+
+.steps .on {
+  border-color: var(--border);
+  color: var(--on-accent);
+  background: var(--accent);
+}
+
+.note {
+  font-size: 15px;
+  color: var(--muted);
+}

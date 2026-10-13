@@ -78,6 +78,21 @@ export const PLATFORM_LABELS: Readonly<Record<string, string>> = {
   'yahoo-mail': 'Yahoo Mail',
 };
 
+/** Product name shown in the UI and the snippet comment. Placeholder until the name is final. */
+export const BRAND_NAME = '[YOUR BRAND]';
+
+/** Query parameter for "ignore my visits" (`?audience_ignore=1`); also the localStorage key. */
+export const IGNORE_PARAM = 'audience_ignore';
+
+/** Path of the tracker script on the web app's domain (neutral name for ad blockers, §4). */
+export const TRACKER_PATH = '/js/script.js';
+
+/** Public site keys: "ws_" + 6 characters from an alphabet without 0/O/1/I (§10). */
+export const SITE_KEY_PREFIX = 'ws_';
+export const SITE_KEY_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const SITE_KEY_LENGTH = 6;
+export const SITE_KEY_RE = /^ws_[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
+
 /** A visit ends after 30 minutes without activity (BUILD_PROMPT §9). */
 export const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 

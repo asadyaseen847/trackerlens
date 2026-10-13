@@ -1,9 +1,32 @@
+import { updateWorkspaceBodySchema } from '@audience/shared';
 import { Router } from 'express';
-import { notImplemented } from '../utils/httpError.js';
+import type { AppDeps } from '../createApp.js';
+import type { TablesUpdate } from '../db/database.types.js';
+import { toWorkspaceDto } from '../db/mappers.js';
+import { getAuth, requireAuth } from '../middleware/requireAuth.js';
+import { HttpError } from '../utils/httpError.js';
 
-export const workspaceRouter = Router();
+/** The signed-in user's workspace (§10). */
+export function workspaceRouter({ repo }: AppDeps): Router {
+  const router = Router();
+  router.use(requireAuth(repo));
 
-// TODO(Phase 1, §10): requireAuth, scoped to the signed-in user's workspace
-workspaceRouter.get('/', notImplemented(1));
-// TODO(Phase 1, §10): update name and timezone
-workspaceRouter.patch('/', notImplemented(1));
+  router.get('/', async (_req, res) => {
+    const { workspaceId, role } = getAuth(res);
+    const workspace = await repo.findWorkspaceById(workspaceId);
+    if (!workspace) throw new HttpError(404, 'Workspace not found.');
+    res.json(toWorkspaceDto(workspace, role));
+  });
+
+  router.patch('/', async (req, res) => {
+    const { workspaceId, role } = getAuth(res);
+    const body = updateWorkspaceBodySchema.parse(req.body);
+    const patch: TablesUpdate<'workspaces'> = {};
+    if (body.name !== undefined) patch.name = body.name;
+    if (body.timezone !== undefined) patch.timezone = body.timezone;
+    const workspace = await repo.updateWorkspace(workspaceId, patch);
+    res.json(toWorkspaceDto(workspace, role));
+  });
+
+  return router;
+}

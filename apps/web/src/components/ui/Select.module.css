@@ -26,3 +26,14 @@
   background-size: 5px 5px;
   background-repeat: no-repeat;
 }
+
+/* Long domains must not push the page wider than a 390 px phone. */
+.field {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.select {
+  max-width: 100%;
+  text-overflow: ellipsis;
+}

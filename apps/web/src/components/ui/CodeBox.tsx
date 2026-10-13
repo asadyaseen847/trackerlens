@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import styles from './CodeBox.module.css';
 
 export interface CodeBoxProps {
@@ -5,14 +6,19 @@ export interface CodeBoxProps {
   /** Substring to highlight in lime (the site key, §11). */
   highlight?: string;
   label: string;
+  /** Wrap long lines (links) instead of scrolling sideways. */
+  wrap?: boolean;
 }
 
-/** Ink code block for the tracking snippet. TODO(Phase 1, §11): Copy button + Ctrl+C fallback. */
-export function CodeBox({ code, highlight, label }: CodeBoxProps) {
+/** Ink code block. The ref points at the <pre>, for "select the text" copy fallbacks. */
+export const CodeBox = forwardRef<HTMLPreElement, CodeBoxProps>(function CodeBox(
+  { code, highlight, label, wrap = false },
+  ref,
+) {
   const parts = highlight ? code.split(highlight) : [code];
   return (
     <div className={styles.codebox}>
-      <pre aria-label={label}>
+      <pre ref={ref} aria-label={label} className={wrap ? styles.wrap : undefined}>
         <code>
           {parts.map((part, i) => (
             <span key={i}>
@@ -24,4 +30,4 @@ export function CodeBox({ code, highlight, label }: CodeBoxProps) {
       </pre>
     </div>
   );
-}
+});

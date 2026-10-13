@@ -13,6 +13,35 @@ A short log of choices that aren't obvious from the code. Newest first.
 
 ---
 
+## 2026-10-13: Phase 1, API data access goes through a `Repo` interface
+
+**Decision:** Services and routes use `Repo` (`apps/api/src/db/repo.ts`). Production uses `supabaseRepo()`, and tests pass an in-memory `memoryRepo()` to `createApp({ repo })`. The in-memory version copies the constraints that matter: unique email, unique site key, unique domain per workspace, and cascading deletes.
+**Why:** Auth, CRUD and workspace-isolation tests run in CI without a database or network. The trade-off is that SQL behaviour is verified by a manual browser run against Supabase, not by unit tests.
+
+## 2026-10-13: Phase 1, sign-up without a transaction
+
+**Decision:** Sign-up inserts the user, then the workspace, then the membership. If a later insert fails, it deletes the earlier rows.
+**Why:** supabase-js has no transactions over REST. A Postgres function would make it atomic but needs another migration. Revisit if partial accounts ever appear.
+
+## 2026-10-13: Phase 1, session cookie and auth details
+
+**Decision:**
+
+- Cookie `session`: an HS256 JWT (`sub` = user id), valid 30 days. `httpOnly`, `SameSite=Lax`, and `Secure` in production.
+- bcrypt cost 12; tests use 4.
+- Wrong email and wrong password return the same 401. Unknown emails are compared against a dummy hash, so the timing matches too.
+- Login and sign-up allow 10 attempts per minute per client. The in-memory limiter keys clients by an IP hash, never the IP itself.
+- Development without `JWT_SECRET` uses a fixed, insecure dev secret. Production refuses to start without one.
+
+## 2026-10-13: Phase 1, the dashboard builds the snippet from its own origin
+
+**Decision:** The Install page builds the code with `buildSnippet(site, trackerScriptUrl(window.location.origin))`. `GET /sites/:id/snippet` still exists and uses `APP_URL`.
+**Why:** The script is served by the same web app that shows the code, so the URL is right locally, on `.vercel.app` and on a custom domain, even before `APP_URL` is set.
+
+## 2026-10-13: Phase 1, "ignore my visits" parameter
+
+**Decision:** `?audience_ignore=1`, from `IGNORE_PARAM` in `packages/shared/src/constants.ts`, alongside `BRAND_NAME`. Rename both when the product name is final. The Phase 2 tracker must use the same constant.
+
 ## 2026-10-13: `src/app.ts` renamed to `src/createApp.ts`
 
 **Context:** The first working build crashed on every request: `Invalid export found in module ".../src/app.js". The default export must be a function or server`. Vercel's Express preset uses the first file it finds among `src/app`, `src/index` and `src/server`, and `app.ts` only exported `createApp`.

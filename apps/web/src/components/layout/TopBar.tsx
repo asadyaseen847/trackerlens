@@ -1,4 +1,6 @@
+import { BRAND_NAME } from '@audience/shared';
 import { Link } from 'react-router';
+import { useMe } from '../../features/auth/useAuth';
 import styles from './TopBar.module.css';
 
 export interface TopBarProps {
@@ -6,11 +8,11 @@ export interface TopBarProps {
 }
 
 export function TopBar({ showSettings }: TopBarProps) {
-  // TODO(Phase 1, §11): real workspace name from /auth/me.
-  // TODO(Phase 4, §13): show the badge only while SOCIAL_MOCK / sample data is in use.
+  const { data: me } = useMe();
+  // TODO(Phase 4, §13): "Sample data" badge while the mock social provider is in use.
   return (
     <header className={styles.topbar}>
-      <Link to="/app/websites" className={styles.brand}>
+      <Link to={me ? '/app/websites' : '/login'} className={styles.brand}>
         <span className={styles.logo} aria-hidden="true">
           <svg
             width="22"
@@ -24,17 +26,18 @@ export function TopBar({ showSettings }: TopBarProps) {
             <path d="M4 18l5-6 4 4 7-9" />
           </svg>
         </span>
-        [YOUR BRAND]
+        {BRAND_NAME}
       </Link>
-      <div className={styles.meta}>
-        <span className={styles.workspace}>[Customer company]</span>
-        <span className={styles.badge}>Sample data</span>
-        {showSettings && (
-          <Link to="/app/settings" className={styles.settings}>
-            Settings
-          </Link>
-        )}
-      </div>
+      {me && (
+        <div className={styles.meta}>
+          <span className={styles.workspace}>{me.workspace.name}</span>
+          {showSettings && (
+            <Link to="/app/settings" className={styles.settings}>
+              Settings
+            </Link>
+          )}
+        </div>
+      )}
     </header>
   );
 }

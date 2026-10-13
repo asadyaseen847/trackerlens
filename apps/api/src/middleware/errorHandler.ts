@@ -29,7 +29,11 @@ export const errorHandler: ErrorRequestHandler = (err: unknown, req, res, _next)
   }
 
   if (err instanceof ZodError) {
-    const body: ApiErrorBody = { error: 'Invalid request', details: err.issues };
+    // The first issue's message is written for people ("Enter a valid email address.").
+    const body: ApiErrorBody = {
+      error: err.issues[0]?.message ?? 'Invalid request',
+      details: err.issues,
+    };
     res.status(400).json(body);
     return;
   }

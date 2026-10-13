@@ -1,0 +1,94 @@
+.headrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.insight {
+  margin-top: 10px;
+  font-size: 17px;
+  max-width: 70ch;
+}
+
+.two {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
+  gap: 22px;
+  align-items: start;
+}
+
+.codebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.note {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.note b {
+  color: var(--ink);
+}
+
+.guide {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guide code {
+  font-family: var(--font-code);
+  font-size: 13px;
+  background: var(--track);
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+.switches {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ignore {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 2px dashed var(--line);
+  border-radius: 14px;
+}
+
+.facts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.facts li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.facts li::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--ink);
+  margin-top: 7px;
+  flex: none;
+}
