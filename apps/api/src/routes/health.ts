@@ -11,8 +11,14 @@ healthRouter.get('/', (_req, res) => {
 healthRouter.get('/db', async (_req, res) => {
   const started = Date.now();
   try {
-    const { error } = await getDb().from('workspaces').select('id', { head: true, count: 'exact' });
-    if (error) throw new Error(error.message);
+    const { error, status } = await getDb()
+      .from('workspaces')
+      .select('id', { head: true, count: 'exact' });
+    if (error) {
+      // Supabase's own error text (e.g. "Invalid API key") never contains credentials.
+      res.status(503).json({ ok: false, db: 'unreachable', status, reason: error.message });
+      return;
+    }
     res.json({ ok: true, db: 'connected', latencyMs: Date.now() - started });
   } catch (err) {
     const detail = process.env.NODE_ENV === 'production' ? undefined : (err as Error).message;
