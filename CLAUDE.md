@@ -30,7 +30,10 @@ All three must pass. For tracker changes, also run `npm run build:tracker`; it m
 - Log non-obvious technical decisions in `docs/decisions.md`.
 - Use plain language in the UI: "visits", "where they came from", "platform". Not "sessions", "referrer" or "attribution".
 - Scope every API query to the signed-in user's workspace. The API uses the Supabase service-role key, which bypasses RLS, so our code is the only guard. Validate every input with zod.
-- Schema changes go in a new file in `supabase/migrations/` (never edit an applied one). Keep RLS enabled on every table, then update `apps/api/src/db/database.types.ts` (`npm run db:types`).
+- Read `docs/database.md` before touching the database. Keep it in third normal form, using lookup tables (`channels`, `platforms`) rather than free text.
+- Schema changes go in a new file in `supabase/migrations/`; never edit an applied one. Each change must:
+  - add a `comment on` for every new table and column, and keep RLS enabled;
+  - update `apps/api/src/db/database.types.ts` (`npm run db:types`) and `docs/database.md`.
 - Never expose `SUPABASE_SERVICE_ROLE_KEY` to the web app or the browser.
 
 ## Conventions

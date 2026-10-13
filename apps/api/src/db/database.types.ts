@@ -1,106 +1,75 @@
 /**
  * Types for supabase/migrations, in the format `supabase gen types typescript` produces.
- * Hand-written for the scaffold. Once the Supabase project exists, regenerate with
- * `npm run db:types` and keep this file in sync with every new migration.
+ * Hand-written to match 20261013000000_initial_schema.sql. After a schema change, regenerate
+ * with `npm run db:types` (or update by hand) and keep docs/database.md in sync.
  */
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-type Channel = 'social' | 'search' | 'email' | 'ai' | 'direct' | 'other';
 type Device = 'phone' | 'tablet' | 'desktop';
 type MemberRole = 'owner' | 'member';
-type SocialPlatform = 'instagram' | 'facebook' | 'youtube' | 'linkedin' | 'tiktok' | 'x';
 type SocialAccountStatus = 'connected' | 'needs_reconnect' | 'disconnected';
+
+/** Builds Insert/Update from Row: `Required` keys stay required on insert. */
+type Table<Row, Required extends keyof Row, Rel = []> = {
+  Row: Row;
+  Insert: Pick<Row, Required> & Partial<Omit<Row, Required>>;
+  Update: Partial<Row>;
+  Relationships: Rel;
+};
+
+type Fk<Name extends string, Col extends string, Ref extends string> = {
+  foreignKeyName: Name;
+  columns: [Col];
+  isOneToOne: false;
+  referencedRelation: Ref;
+  referencedColumns: ['id'];
+};
 
 export type Database = {
   public: {
     Tables: {
-      users: {
-        Row: {
+      channels: Table<
+        { id: string; label: string; description: string; sort_order: number },
+        'id' | 'label' | 'description' | 'sort_order'
+      >;
+      platforms: Table<
+        { id: string; label: string; channel_id: string; sort_order: number },
+        'id' | 'label' | 'channel_id',
+        [Fk<'platforms_channel_id_fkey', 'channel_id', 'channels'>]
+      >;
+      users: Table<
+        {
           id: string;
           email: string;
           password_hash: string;
           name: string;
           created_at: string;
-        };
-        Insert: {
-          id?: string;
-          email: string;
-          password_hash: string;
-          name: string;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          email?: string;
-          password_hash?: string;
-          name?: string;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
-      workspaces: {
-        Row: {
+          updated_at: string;
+        },
+        'email' | 'password_hash' | 'name'
+      >;
+      workspaces: Table<
+        {
           id: string;
           name: string;
           timezone: string;
           retention_months: number;
           created_at: string;
-        };
-        Insert: {
-          id?: string;
-          name: string;
-          timezone?: string;
-          retention_months?: number;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          name?: string;
-          timezone?: string;
-          retention_months?: number;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
-      workspace_members: {
-        Row: {
-          workspace_id: string;
-          user_id: string;
-          role: MemberRole;
-          created_at: string;
-        };
-        Insert: {
-          workspace_id: string;
-          user_id: string;
-          role: MemberRole;
-          created_at?: string;
-        };
-        Update: {
-          workspace_id?: string;
-          user_id?: string;
-          role?: MemberRole;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_members_workspace_id_fkey';
-            columns: ['workspace_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_members_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      sites: {
-        Row: {
+          updated_at: string;
+        },
+        'name'
+      >;
+      workspace_members: Table<
+        { workspace_id: string; user_id: string; role: MemberRole; created_at: string },
+        'workspace_id' | 'user_id' | 'role',
+        [
+          Fk<'workspace_members_workspace_id_fkey', 'workspace_id', 'workspaces'>,
+          Fk<'workspace_members_user_id_fkey', 'user_id', 'users'>,
+        ]
+      >;
+      sites: Table<
+        {
           id: string;
           workspace_id: string;
           domain: string;
@@ -111,71 +80,25 @@ export type Database = {
           first_event_at: string | null;
           last_event_at: string | null;
           created_at: string;
-        };
-        Insert: {
-          id?: string;
-          workspace_id: string;
-          domain: string;
-          site_key: string;
-          include_subdomains?: boolean;
-          paused?: boolean;
-          allow_localhost?: boolean;
-          first_event_at?: string | null;
-          last_event_at?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          workspace_id?: string;
-          domain?: string;
-          site_key?: string;
-          include_subdomains?: boolean;
-          paused?: boolean;
-          allow_localhost?: boolean;
-          first_event_at?: string | null;
-          last_event_at?: string | null;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'sites_workspace_id_fkey';
-            columns: ['workspace_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      salts: {
-        Row: {
-          day: string;
-          value: string;
-          created_at: string;
-        };
-        Insert: {
-          day: string;
-          value: string;
-          created_at?: string;
-        };
-        Update: {
-          day?: string;
-          value?: string;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
-      sessions: {
-        Row: {
+          updated_at: string;
+        },
+        'workspace_id' | 'domain' | 'site_key',
+        [Fk<'sites_workspace_id_fkey', 'workspace_id', 'workspaces'>]
+      >;
+      salts: Table<{ day: string; value: string; created_at: string }, 'day' | 'value'>;
+      visits: Table<
+        {
           id: string;
           site_id: string;
           visitor_hash: string;
           started_at: string;
           last_seen_at: string;
-          pageviews: number;
+          pageview_count: number;
           entry_path: string;
           exit_path: string;
-          channel: Channel;
-          platform: string;
+          channel_id: string;
+          platform_id: string;
+          source_detail: string | null;
           is_paid: boolean;
           referrer_host: string | null;
           utm_source: string | null;
@@ -183,221 +106,108 @@ export type Database = {
           utm_campaign: string | null;
           utm_term: string | null;
           utm_content: string | null;
-          country: string;
+          country_code: string;
           device: Device;
           browser: string | null;
           os: string | null;
-        };
-        Insert: {
-          id?: string;
-          site_id: string;
-          visitor_hash: string;
-          started_at: string;
-          last_seen_at: string;
-          pageviews?: number;
-          entry_path: string;
-          exit_path: string;
-          channel: Channel;
-          platform: string;
-          is_paid?: boolean;
-          referrer_host?: string | null;
-          utm_source?: string | null;
-          utm_medium?: string | null;
-          utm_campaign?: string | null;
-          utm_term?: string | null;
-          utm_content?: string | null;
-          country?: string;
-          device: Device;
-          browser?: string | null;
-          os?: string | null;
-        };
-        Update: {
-          id?: string;
-          site_id?: string;
-          visitor_hash?: string;
-          started_at?: string;
-          last_seen_at?: string;
-          pageviews?: number;
-          entry_path?: string;
-          exit_path?: string;
-          channel?: Channel;
-          platform?: string;
-          is_paid?: boolean;
-          referrer_host?: string | null;
-          utm_source?: string | null;
-          utm_medium?: string | null;
-          utm_campaign?: string | null;
-          utm_term?: string | null;
-          utm_content?: string | null;
-          country?: string;
-          device?: Device;
-          browser?: string | null;
-          os?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'sessions_site_id_fkey';
-            columns: ['site_id'];
-            isOneToOne: false;
-            referencedRelation: 'sites';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      pageviews: {
-        Row: {
-          id: number;
-          ts: string;
-          site_id: string;
-          session_id: string;
-          path: string;
-          channel: Channel;
-          platform: string;
-          country: string;
-          device: Device;
-        };
-        Insert: {
-          id?: never;
-          ts: string;
-          site_id: string;
-          session_id: string;
-          path: string;
-          channel: Channel;
-          platform: string;
-          country: string;
-          device: Device;
-        };
+        },
+        | 'site_id'
+        | 'visitor_hash'
+        | 'started_at'
+        | 'last_seen_at'
+        | 'entry_path'
+        | 'exit_path'
+        | 'channel_id'
+        | 'platform_id'
+        | 'device',
+        [
+          Fk<'visits_site_id_fkey', 'site_id', 'sites'>,
+          Fk<'visits_channel_id_fkey', 'channel_id', 'channels'>,
+          Fk<'visits_platform_id_fkey', 'platform_id', 'platforms'>,
+        ]
+      >;
+      page_views: {
+        Row: { id: number; visit_id: string; site_id: string; viewed_at: string; path: string };
+        Insert: { id?: never; visit_id: string; site_id: string; viewed_at: string; path: string };
         Update: {
           id?: never;
-          ts?: string;
+          visit_id?: string;
           site_id?: string;
-          session_id?: string;
+          viewed_at?: string;
           path?: string;
-          channel?: Channel;
-          platform?: string;
-          country?: string;
-          device?: Device;
         };
         Relationships: [
-          {
-            foreignKeyName: 'pageviews_site_id_fkey';
-            columns: ['site_id'];
-            isOneToOne: false;
-            referencedRelation: 'sites';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'pageviews_session_id_fkey';
-            columns: ['session_id'];
-            isOneToOne: false;
-            referencedRelation: 'sessions';
-            referencedColumns: ['id'];
-          },
+          Fk<'page_views_visit_id_fkey', 'visit_id', 'visits'>,
+          Fk<'page_views_site_id_fkey', 'site_id', 'sites'>,
         ];
       };
-      social_accounts: {
-        Row: {
+      social_accounts: Table<
+        {
           id: string;
           workspace_id: string;
-          platform: SocialPlatform;
+          platform_id: string;
           external_id: string;
           handle: string;
           name: string;
           avatar_url: string | null;
-          access_token_enc: string;
-          refresh_token_enc: string | null;
-          token_expires_at: string | null;
-          scopes: string[];
           status: SocialAccountStatus;
           last_synced_at: string | null;
           created_at: string;
+          updated_at: string;
+        },
+        'workspace_id' | 'platform_id' | 'external_id' | 'handle' | 'name',
+        [
+          Fk<'social_accounts_workspace_id_fkey', 'workspace_id', 'workspaces'>,
+          Fk<'social_accounts_platform_id_fkey', 'platform_id', 'platforms'>,
+        ]
+      >;
+      social_account_tokens: {
+        Row: {
+          social_account_id: string;
+          access_token_enc: string;
+          refresh_token_enc: string | null;
+          expires_at: string | null;
+          scopes: string[];
+          updated_at: string;
         };
         Insert: {
-          id?: string;
-          workspace_id: string;
-          platform: SocialPlatform;
-          external_id: string;
-          handle: string;
-          name: string;
-          avatar_url?: string | null;
+          social_account_id: string;
           access_token_enc: string;
           refresh_token_enc?: string | null;
-          token_expires_at?: string | null;
+          expires_at?: string | null;
           scopes?: string[];
-          status?: SocialAccountStatus;
-          last_synced_at?: string | null;
-          created_at?: string;
+          updated_at?: string;
         };
-        Update: {
-          id?: string;
-          workspace_id?: string;
-          platform?: SocialPlatform;
-          external_id?: string;
-          handle?: string;
-          name?: string;
-          avatar_url?: string | null;
-          access_token_enc?: string;
-          refresh_token_enc?: string | null;
-          token_expires_at?: string | null;
-          scopes?: string[];
-          status?: SocialAccountStatus;
-          last_synced_at?: string | null;
-          created_at?: string;
-        };
+        Update: Partial<Database['public']['Tables']['social_account_tokens']['Row']>;
         Relationships: [
           {
-            foreignKeyName: 'social_accounts_workspace_id_fkey';
-            columns: ['workspace_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
+            foreignKeyName: 'social_account_tokens_social_account_id_fkey';
+            columns: ['social_account_id'];
+            isOneToOne: true;
+            referencedRelation: 'social_accounts';
             referencedColumns: ['id'];
           },
         ];
       };
-      social_daily_stats: {
-        Row: {
+      social_daily_stats: Table<
+        {
           social_account_id: string;
           day: string;
           followers: number | null;
           views: number | null;
           engagements: number | null;
           link_clicks: number | null;
-        };
-        Insert: {
-          social_account_id: string;
-          day: string;
-          followers?: number | null;
-          views?: number | null;
-          engagements?: number | null;
-          link_clicks?: number | null;
-        };
-        Update: {
-          social_account_id?: string;
-          day?: string;
-          followers?: number | null;
-          views?: number | null;
-          engagements?: number | null;
-          link_clicks?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'social_daily_stats_social_account_id_fkey';
-            columns: ['social_account_id'];
-            isOneToOne: false;
-            referencedRelation: 'social_accounts';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
+        },
+        'social_account_id' | 'day',
+        [Fk<'social_daily_stats_social_account_id_fkey', 'social_account_id', 'social_accounts'>]
+      >;
     };
     Views: { [_ in never]: never };
     // TODO(Phase 3, §9): stats aggregation functions (called with db.rpc).
     Functions: { [_ in never]: never };
     Enums: {
-      channel: Channel;
       device: Device;
       member_role: MemberRole;
-      social_platform: SocialPlatform;
       social_account_status: SocialAccountStatus;
     };
     CompositeTypes: { [_ in never]: never };

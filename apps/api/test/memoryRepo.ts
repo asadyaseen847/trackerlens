@@ -10,7 +10,8 @@ import {
 
 /**
  * In-memory Repo for tests. Mirrors the Postgres constraints that matter to services:
- * unique emails, unique site keys, unique (workspace_id, domain), and ON DELETE CASCADE.
+ * unique emails, unique site keys, unique (workspace_id, domain), ON DELETE CASCADE, and the
+ * set_updated_at trigger.
  */
 export function memoryRepo(): Repo & {
   users: UserRow[];
@@ -52,6 +53,7 @@ export function memoryRepo(): Repo & {
         password_hash: input.password_hash,
         name: input.name,
         created_at: input.created_at ?? now(),
+        updated_at: input.updated_at ?? now(),
       };
       users.push(row);
       return clone(row);
@@ -68,6 +70,7 @@ export function memoryRepo(): Repo & {
         timezone: input.timezone ?? 'UTC',
         retention_months: input.retention_months ?? 25,
         created_at: input.created_at ?? now(),
+        updated_at: input.updated_at ?? now(),
       };
       workspaces.push(row);
       return clone(row);
@@ -79,7 +82,7 @@ export function memoryRepo(): Repo & {
     async updateWorkspace(id, patch) {
       const row = workspaces.find((w) => w.id === id);
       if (!row) throw new Error('Database returned no row');
-      Object.assign(row, patch);
+      Object.assign(row, patch, { updated_at: now() }); // like the set_updated_at trigger
       return clone(row);
     },
     async deleteWorkspace(id) {
@@ -133,6 +136,7 @@ export function memoryRepo(): Repo & {
         first_event_at: input.first_event_at ?? null,
         last_event_at: input.last_event_at ?? null,
         created_at: input.created_at ?? now(),
+        updated_at: input.updated_at ?? now(),
       };
       sites.push(row);
       return clone(row);
@@ -140,7 +144,7 @@ export function memoryRepo(): Repo & {
     async updateSite(id, patch) {
       const row = sites.find((s) => s.id === id);
       if (!row) throw new Error('Database returned no row');
-      Object.assign(row, patch);
+      Object.assign(row, patch, { updated_at: now() }); // like the set_updated_at trigger
       return clone(row);
     },
     async deleteSite(id) {

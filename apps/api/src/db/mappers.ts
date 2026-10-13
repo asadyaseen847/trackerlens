@@ -35,7 +35,7 @@ export function toSiteDto(row: SiteRow): SiteDto {
 export function toSiteListItem(row: SiteRow): SiteListItem {
   return {
     ...toSiteDto(row),
-    // TODO(Phase 3, §10): visits in the last 30 days and a 14-day sparkline from sessions.
+    // TODO(Phase 3, §10): visits in the last 30 days and a 14-day sparkline from visits.
     visits30d: 0,
     sparkline: Array.from({ length: 14 }, () => 0),
   };

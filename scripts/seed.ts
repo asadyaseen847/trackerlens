@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 // TODO(Phase 3, §15): demo@example.com / demo1234 (dev only), 3 sites, 18 months of
-// deterministic sessions and pageviews with weekday patterns, growth and viral spikes.
+// deterministic visits and page views with weekday patterns, growth and viral spikes.
 async function main() {
   const url = process.env['SUPABASE_URL'];
   const key = process.env['SUPABASE_SERVICE_ROLE_KEY'];

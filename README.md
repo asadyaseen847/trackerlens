@@ -54,7 +54,11 @@ Never commit real `.env` files. They are gitignored.
 
 The database is **Supabase Postgres**. The API talks to it with `@supabase/supabase-js`, server-side only, using the service-role key. Login is our own (email + password, JWT cookie), not Supabase Auth. See [`docs/decisions.md`](docs/decisions.md).
 
-- **Schema:** SQL migrations in [`supabase/migrations/`](supabase/migrations). Every table has row level security **on, with no policies**, so the public anon key can't read anything. Every query is scoped to the workspace in the API code.
+- **Schema:** SQL migrations in [`supabase/migrations/`](supabase/migrations). They're explained, with a diagram, in [`docs/database.md`](docs/database.md).
+  - The schema is in third normal form, with lookup tables for channels and platforms.
+  - Every table and column has a description in Supabase's Table Editor.
+  - Row level security is **on, with no policies**, and the public keys have no grants, so the anon key can't read anything.
+  - Every query is scoped to the workspace in the API code.
 - **Applying migrations:** with Supabase's GitHub integration, migrations in `supabase/migrations` are applied when they reach the production branch. Manual options: `npx supabase link` then `npx supabase db push`, or paste the file into the Supabase SQL editor.
 - **TypeScript types:** [`apps/api/src/db/database.types.ts`](apps/api/src/db/database.types.ts) matches the schema. After changing a migration, run `npm run db:types` (needs `npx supabase login` and `npx supabase link` once).
 - **Stats queries (Phase 3)** are Postgres functions in a migration, called with `db.rpc(...)`.
@@ -66,7 +70,7 @@ The database is **Supabase Postgres**. The API talks to it with `@supabase/supab
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0. Setup                 | Everything in this scaffold                                                                                                                                                                                                                                       |
 | 1. Accounts & sites      | `apps/api/src/routes/{auth,workspace,sites}.ts`, `services/{auth,sites}.service.ts`, `middleware/{requireAuth,rateLimit}.ts`; `packages/shared/src/{domain,snippet,schemas}.ts`; `apps/web/src/features/{auth,onboarding,install,settings}/`, `AddSiteDialog.tsx` |
-| 2. Tracking              | `packages/tracker/`; `apps/api/src/routes/collect.ts`, `services/{collect,salt,session}.service.ts`, `utils/{hash,ua}.ts`, `middleware/collectCors.ts`; `packages/shared/src/classify.ts`; `examples/test-site/`; `e2e/`                                          |
+| 2. Tracking              | `packages/tracker/`; `apps/api/src/routes/collect.ts`, `services/{collect,salt,visit}.service.ts`, `utils/{hash,ua}.ts`, `middleware/collectCors.ts`; `packages/shared/src/classify.ts`; `examples/test-site/`; `e2e/`                                            |
 | 3. Websites dashboard    | `apps/api/src/routes/stats.ts`, `services/{stats,csv}.service.ts`; `packages/shared/src/periods.ts`; `apps/web/src/features/websites/`, `components/{charts,breakdown}/`, `lib/{format,urlState}.ts`; `scripts/seed.ts`                                           |
 | 4. Social (mock)         | `apps/api/src/social/` (provider, registry, crypto, sync, `providers/mock.ts`), `routes/social.ts`; `apps/web/src/features/social/`                                                                                                                               |
 | 5. Real social providers | `apps/api/src/social/providers/{meta,youtube,linkedin,tiktok,x}.ts`                                                                                                                                                                                               |

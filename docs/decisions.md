@@ -13,6 +13,27 @@ A short log of choices that aren't obvious from the code. Newest first.
 
 ---
 
+## 2026-10-13: Normalized database schema (replaces the first draft)
+
+**Context:** The owner asked for the best-structured, easy-to-understand database. The first draft translated the brief's MongoDB model directly: page views copied channel/platform/country/device, platform was free text, and the table was named `sessions`.
+**Decision:** The schema is rewritten in third normal form, still in one migration file (the database was empty):
+
+- `sessions` becomes `visits`, matching the product's wording; `pageviews` becomes `page_views`.
+- Lookup tables: `channels` and `platforms` (each platform has a channel), seeded in the migration.
+  - `visits.platform_id` and `channel_id` are foreign keys.
+  - Unknown sources use platform `other`, with the host or utm_source in `visits.source_detail`.
+- `page_views` keeps only `visit_id`, `site_id`, `viewed_at` and `path`. Source, device and country are read from the visit with a join.
+- Kept deliberately:
+  - `page_views.site_id`, because every scan is per site and time range.
+  - `visits.channel_id`, because campaign tags can override the platform's channel.
+- OAuth tokens move to `social_account_tokens` (1:1), away from profile data.
+- Integrity rules: check constraints (site key, domain, country code, path, counts), an `updated_at` trigger, and cascades.
+- Every table and column has a `comment`, shown in Supabase's Table Editor. `docs/database.md` has the diagram.
+- Supabase's `anon` / `authenticated` roles get no grants, on top of RLS.
+
+**Why:** Each fact is stored once and explains itself, and bad data is rejected by the database. This deviates from §7.10 (copying visit fields onto page views for speed). The scalable fix for speed is daily rollup tables, planned in Phase 6 (§17), not duplicated columns.
+**How it was applied:** A database built from the draft runs `supabase/scripts/reset_public_schema.sql` (it drops the empty draft tables), then the migration.
+
 ## 2026-10-13: Phase 1, API data access goes through a `Repo` interface
 
 **Decision:** Services and routes use `Repo` (`apps/api/src/db/repo.ts`). Production uses `supabaseRepo()`, and tests pass an in-memory `memoryRepo()` to `createApp({ repo })`. The in-memory version copies the constraints that matter: unique email, unique site key, unique domain per workspace, and cascading deletes.
@@ -68,8 +89,8 @@ A short log of choices that aren't obvious from the code. Newest first.
 - ObjectIds become `uuid`s; snake_case columns.
 - Site settings and UTM fields become flat columns.
 - Workspace members get their own `workspace_members` table.
-- The pageview time-series collection becomes a `pageviews` table indexed on `(site_id, ts)`, plus a BRIN index on `ts`.
-- `$dateTrunc` becomes `date_trunc(unit, ts at time zone tz)`, inside Postgres functions called with `db.rpc` (Phase 3).
+- The page-view time-series collection becomes the `page_views` table. The final shape is in the normalized schema entry above.
+- `$dateTrunc` becomes `date_trunc(unit, viewed_at at time zone tz)`, inside Postgres functions called with `db.rpc` (Phase 3).
 - Env vars: `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` replace `MONGODB_URI`.
 
 **Why:** The owner's choice of platform. Postgres also handles the grouped stats queries well.
@@ -123,8 +144,3 @@ A short log of choices that aren't obvious from the code. Newest first.
 
 **Decision:** `workspaces.retention_months` (default 25). The Phase 6 weekly cron enforces it.
 **Why:** §5 asks for a configurable setting, and the workspace is the natural place for it.
-
-## 2026-10-13: Extra indexes on pageviews
-
-**Decision:** `pageviews (site_id, ts)`, `pageviews (session_id)` and a BRIN index on `ts`, on top of the indexes listed in §5.
-**Why:** Every stats query filters by site and time range. The session index keeps cascading deletes fast, and BRIN makes retention deletes cheap.

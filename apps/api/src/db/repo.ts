@@ -44,6 +44,6 @@ export interface Repo {
   /** Throws UniqueViolationError on a duplicate domain (in the workspace) or site key. */
   createSite(input: TablesInsert<'sites'>): Promise<SiteRow>;
   updateSite(id: string, patch: TablesUpdate<'sites'>): Promise<SiteRow>;
-  /** Also deletes the site's sessions and pageviews (ON DELETE CASCADE). */
+  /** Also deletes the site's visits and page views (ON DELETE CASCADE). */
   deleteSite(id: string): Promise<void>;
 }

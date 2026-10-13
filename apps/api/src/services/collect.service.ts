@@ -9,6 +9,6 @@ export interface CollectContext {
 
 /**
  * Handle one tracker hit end to end. Must never throw to the route (it always answers 202).
- * TODO(Phase 2, §7): site cache, hostname check, bots, hash, session, pageview, lastEventAt.
+ * TODO(Phase 2, §7): site cache, hostname check, bots, hash, visit, page view, lastEventAt.
  */
 export async function handleHit(_payload: CollectPayload, _ctx: CollectContext): Promise<void> {}
