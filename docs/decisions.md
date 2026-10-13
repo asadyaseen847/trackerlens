@@ -13,6 +13,12 @@ A short log of choices that aren't obvious from the code. Newest first.
 
 ---
 
+## 2026-10-13: `src/app.ts` renamed to `src/createApp.ts`
+
+**Context:** The first working build crashed on every request: `Invalid export found in module ".../src/app.js". The default export must be a function or server`. Vercel's Express preset uses the first file it finds among `src/app`, `src/index` and `src/server`, and `app.ts` only exported `createApp`.
+**Decision:** The app factory lives in `src/createApp.ts`. `src/index.ts` is the only entrypoint and default-exports the app. `test/entrypoint.test.ts` fails if `src/app.*` or `src/server.*` is added again.
+**Why:** The entrypoint is then unambiguous, with no extra config. This deviates from the scaffold layout's file name.
+
 ## 2026-10-13: API runs in Vercel region `icn1` (Seoul)
 
 **Decision:** `apps/api/vercel.json` sets `"regions": ["icn1"]`, matching the Supabase project in `ap-northeast-2` (Seoul).
@@ -21,7 +27,7 @@ A short log of choices that aren't obvious from the code. Newest first.
 ## 2026-10-13: helmet import that works under both of its type declarations
 
 **Context:** The first Vercel deploy failed its typecheck with `TS2349` at `app.use(helmet())`. Vercel's build typecheck resolved helmet's CommonJS declaration (`index.d.cts`), where an ES module's default import is the module object rather than the function. Our local `tsc` resolves `index.d.mts`, so it passed locally.
-**Decision:** `apps/api/src/app.ts` accepts either shape at runtime and in types. A test checks helmet's headers are still sent.
+**Decision:** `apps/api/src/createApp.ts` accepts either shape at runtime and in types. A test checks helmet's headers are still sent.
 **Why:** The fix works no matter which declaration a tool picks. Watch for the same issue with other dual ESM/CJS packages (default imports).
 
 ## 2026-10-13: Supabase Postgres instead of MongoDB

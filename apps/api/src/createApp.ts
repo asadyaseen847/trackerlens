@@ -12,7 +12,10 @@ const helmet = (typeof helmetImport === 'function'
   : (helmetImport as unknown as { default: typeof helmetImport })
       .default) as unknown as () => RequestHandler;
 
-/** Builds the Express app. Kept separate from index.ts so tests can use it without listening. */
+/**
+ * Builds the Express app. Kept separate from index.ts so tests can use it without listening.
+ * Not named app.ts: Vercel picks src/app.ts as the entrypoint before src/index.ts.
+ */
 export function createApp() {
   const app = express();
 

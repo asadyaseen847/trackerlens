@@ -1,4 +1,4 @@
-import { createApp } from './app.js';
+import { createApp } from './createApp.js';
 import { loadEnv } from './config/env.js';
 import { logger } from './utils/logger.js';
 
