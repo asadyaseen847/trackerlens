@@ -16,7 +16,7 @@ A short log of choices that aren't obvious from the code. Newest first.
 ## 2026-10-13: `src/app.ts` renamed to `src/createApp.ts`
 
 **Context:** The first working build crashed on every request: `Invalid export found in module ".../src/app.js". The default export must be a function or server`. Vercel's Express preset uses the first file it finds among `src/app`, `src/index` and `src/server`, and `app.ts` only exported `createApp`.
-**Decision:** The app factory lives in `src/createApp.ts`. `src/index.ts` is the only entrypoint and default-exports the app. `test/entrypoint.test.ts` fails if `src/app.*` or `src/server.*` is added again.
+**Decision:** The app factory lives in `src/createApp.ts`. `src/index.ts` is the only entrypoint and default-exports the app. Vercel also requires the entrypoint's source to import `express`: the next build failed with "No entrypoint found which imports express". So `src/index.ts` imports the `Express` type, which is erased at runtime. `test/entrypoint.test.ts` enforces both rules.
 **Why:** The entrypoint is then unambiguous, with no extra config. This deviates from the scaffold layout's file name.
 
 ## 2026-10-13: API runs in Vercel region `icn1` (Seoul)
