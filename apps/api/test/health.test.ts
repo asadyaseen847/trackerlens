@@ -17,6 +17,15 @@ describe('GET /api/health', () => {
   });
 });
 
+describe('GET /api/health/db', () => {
+  it('answers 503 when Supabase is not configured', async () => {
+    // The test environment has no SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY.
+    const res = await request(createApp()).get('/api/health/db');
+    expect(res.status).toBe(503);
+    expect(res.body).toMatchObject({ ok: false, db: 'unreachable' });
+  });
+});
+
 describe('GET /', () => {
   it('describes the service instead of answering 404', async () => {
     const res = await request(createApp()).get('/');
