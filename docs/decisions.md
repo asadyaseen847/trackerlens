@@ -13,6 +13,17 @@ A short log of choices that aren't obvious from the code. Newest first.
 
 ---
 
+## 2026-10-13: API runs in Vercel region `icn1` (Seoul)
+
+**Decision:** `apps/api/vercel.json` sets `"regions": ["icn1"]`, matching the Supabase project in `ap-northeast-2` (Seoul).
+**Why:** Every API request makes several database calls; same-region keeps each one fast. Change both together if the database ever moves.
+
+## 2026-10-13: helmet import that works under both of its type declarations
+
+**Context:** The first Vercel deploy failed its typecheck with `TS2349` at `app.use(helmet())`. Vercel's build typecheck resolved helmet's CommonJS declaration (`index.d.cts`), where an ES module's default import is the module object rather than the function. Our local `tsc` resolves `index.d.mts`, so it passed locally.
+**Decision:** `apps/api/src/app.ts` accepts either shape at runtime and in types. A test checks helmet's headers are still sent.
+**Why:** The fix works no matter which declaration a tool picks. Watch for the same issue with other dual ESM/CJS packages (default imports).
+
 ## 2026-10-13: Supabase Postgres instead of MongoDB
 
 **Context:** The brief (§2, §4, §5) specifies MongoDB Atlas with Mongoose. The owner decided to use **Supabase**, connected to Vercel and GitHub through their integrations. `BUILD_PROMPT.md` isn't edited, so this entry overrides those sections.

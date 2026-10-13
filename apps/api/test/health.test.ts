@@ -9,6 +9,12 @@ describe('GET /api/health', () => {
     expect(res.body).toMatchObject({ ok: true });
     expect(typeof res.body.time).toBe('string');
   });
+
+  it('sends helmet security headers', async () => {
+    const res = await request(createApp()).get('/api/health');
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
+    expect(res.headers['x-powered-by']).toBeUndefined();
+  });
 });
 
 describe('placeholder routes', () => {
