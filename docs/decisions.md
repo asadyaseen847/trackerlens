@@ -13,6 +13,32 @@ A short log of choices that aren't obvious from the code. Newest first.
 
 ---
 
+## 2026-10-13: Supabase Postgres instead of MongoDB
+
+**Context:** The brief (§2, §4, §5) specifies MongoDB Atlas with Mongoose. The owner decided to use **Supabase**, connected to Vercel and GitHub through their integrations. `BUILD_PROMPT.md` isn't edited, so this entry overrides those sections.
+**Decision:**
+
+- Postgres schema in `supabase/migrations/`, a direct translation of §5.
+- ObjectIds become `uuid`s; snake_case columns.
+- Site settings and UTM fields become flat columns.
+- Workspace members get their own `workspace_members` table.
+- The pageview time-series collection becomes a `pageviews` table indexed on `(site_id, ts)`, plus a BRIN index on `ts`.
+- `$dateTrunc` becomes `date_trunc(unit, ts at time zone tz)`, inside Postgres functions called with `db.rpc` (Phase 3).
+- Env vars: `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` replace `MONGODB_URI`.
+
+**Why:** The owner's choice of platform. Postgres also handles the grouped stats queries well.
+
+## 2026-10-13: Database access via supabase-js with the service-role key; RLS on, no policies
+
+**Context:** Choice between supabase-js, Drizzle and Prisma. The owner chose supabase-js.
+**Decision:** The API creates one cached service-role client (`apps/api/src/db/supabase.ts`). RLS is enabled on every table with no policies, so the anon key gets nothing. Workspace scoping is enforced in API code and covered by tests (§10, §14). Aggregations that the query builder can't express are Postgres functions in migrations. `database.types.ts` was hand-written for the scaffold; regenerate it with `npm run db:types` once the project exists.
+**Why:** It needs no direct Postgres connection, so there are no pooler or connection-limit concerns on Vercel. The trade-off: complex queries live in SQL functions, not TypeScript.
+
+## 2026-10-13: Own email + password auth, not Supabase Auth
+
+**Decision:** Keep §10 as written. Users live in `public.users` with a bcrypt hash, and the API issues its own JWT in an httpOnly cookie. Supabase Auth (`auth.users`) is unused.
+**Why:** The owner's choice. It keeps the brief's same-site cookie design. Supabase Auth remains an option if Google sign-in or password reset is wanted later.
+
 ## 2026-10-13: Pin TypeScript 6.0 and ESLint 9
 
 **Context:** The latest TypeScript is 7.0 and the latest ESLint is 10. `typescript-eslint` supports TypeScript `<6.1`, and `eslint-plugin-react` and `eslint-plugin-jsx-a11y` support ESLint up to 9.
@@ -49,10 +75,10 @@ A short log of choices that aren't obvious from the code. Newest first.
 
 ## 2026-10-13: Data retention lives on the workspace
 
-**Decision:** `Workspace.retentionMonths` (default 25). The Phase 6 weekly cron enforces it.
+**Decision:** `workspaces.retention_months` (default 25). The Phase 6 weekly cron enforces it.
 **Why:** §5 asks for a configurable setting, and the workspace is the natural place for it.
 
-## 2026-10-13: Extra index on pageviews
+## 2026-10-13: Extra indexes on pageviews
 
-**Decision:** `Pageview { 'meta.siteId': 1, ts: 1 }`, on top of the indexes listed in §5.
-**Why:** Every stats query filters by site and time range.
+**Decision:** `pageviews (site_id, ts)`, `pageviews (session_id)` and a BRIN index on `ts`, on top of the indexes listed in §5.
+**Why:** Every stats query filters by site and time range. The session index keeps cascading deletes fast, and BRIN makes retention deletes cheap.

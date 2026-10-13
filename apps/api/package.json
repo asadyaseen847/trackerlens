@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@audience/shared": "*",
+    "@supabase/supabase-js": "^2.117.3",
     "bcryptjs": "^3.0.3",
     "bowser": "^2.14.1",
     "cookie-parser": "^1.4.7",
@@ -19,7 +20,6 @@
     "helmet": "^8.3.0",
     "isbot": "^5.2.2",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.11.2",
     "zod": "^4.6.7"
   },
   "devDependencies": {

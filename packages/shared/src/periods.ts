@@ -12,7 +12,7 @@ export interface PeriodOptions {
 export interface PeriodRanges {
   range: DateRange;
   compareRange: DateRange;
-  /** Bucket unit for $dateTrunc. */
+  /** Bucket unit for Postgres date_trunc. */
   unit: 'day' | 'week' | 'month' | 'year';
   bucketCount: number;
 }

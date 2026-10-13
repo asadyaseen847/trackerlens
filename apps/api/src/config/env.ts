@@ -1,11 +1,16 @@
 import { z } from 'zod';
 
-/** Every variable from BUILD_PROMPT §16. Required-ness depends on NODE_ENV (see loadEnv). */
+/**
+ * BUILD_PROMPT §16, with Supabase replacing MONGODB_URI (docs/decisions.md).
+ * Which variables are required depends on NODE_ENV (see loadEnv).
+ */
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
 
-  MONGODB_URI: z.string().min(1).optional(),
+  // Set automatically on Vercel by the Supabase integration.
+  SUPABASE_URL: z.url().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   JWT_SECRET: z.string().min(1).optional(),
   ENCRYPTION_KEY: z.string().min(1).optional(),
   APP_URL: z.url().default('http://localhost:5173'),
@@ -27,9 +32,16 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 const REQUIRED: Record<Env['NODE_ENV'], ReadonlyArray<keyof Env>> = {
-  development: ['MONGODB_URI'],
+  development: ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'],
   test: [],
-  production: ['MONGODB_URI', 'JWT_SECRET', 'ENCRYPTION_KEY', 'APP_URL', 'CRON_SECRET'],
+  production: [
+    'SUPABASE_URL',
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'JWT_SECRET',
+    'ENCRYPTION_KEY',
+    'APP_URL',
+    'CRON_SECRET',
+  ],
 };
 
 let cached: Env | undefined;

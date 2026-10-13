@@ -9,20 +9,20 @@ The full spec is in [`docs/BUILD_PROMPT.md`](docs/BUILD_PROMPT.md), and the desi
 ## Prerequisites
 
 - **Node 22 LTS** (`nvm use` reads `.nvmrc`). npm 10+ comes with it.
-- A **MongoDB Atlas** connection string. Pick a region close to your Vercel function region.
+- A **Supabase** project (Postgres). Pick a region close to your Vercel function region.
 
 ## Run locally
 
 ```bash
 npm install                                   # also builds packages/shared
-cp apps/api/.env.example apps/api/.env        # then set MONGODB_URI
+cp apps/api/.env.example apps/api/.env        # then set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
 npm run dev
 ```
 
 - Dashboard: http://localhost:5173
 - API: http://localhost:4000 (the dashboard proxies `/api` to it, so http://localhost:5173/api/health works)
 
-In development the API needs only `MONGODB_URI`. It exits with a clear message if that's missing. In production `JWT_SECRET`, `ENCRYPTION_KEY`, `APP_URL` and `CRON_SECRET` are also required.
+In development the API needs only `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. It exits with a clear message if either is missing. In production `JWT_SECRET`, `ENCRYPTION_KEY`, `APP_URL` and `CRON_SECRET` are also required.
 
 To try the tracker locally, run `npm run build:tracker`, then open `examples/test-site/index.html` through any static server (for example `npx serve examples/test-site`).
 
@@ -38,16 +38,27 @@ To try the tracker locally, run `npm run build:tracker`, then open `examples/tes
 | `npm run format` / `format:check` | Prettier                                                                                                               |
 | `npm test`                        | Vitest in every workspace (API tests use Supertest)                                                                    |
 | `npm run test:e2e`                | Playwright smoke test. The first time, run `npx playwright install chromium`                                           |
-| `npm run seed`                    | Fills MongoDB with demo data (Phase 3). Reads `apps/api/.env`                                                          |
+| `npm run seed`                    | Fills Supabase with demo data (Phase 3). Reads `apps/api/.env`                                                         |
+| `npm run db:types`                | Regenerates `apps/api/src/db/database.types.ts` from the linked Supabase project                                       |
 
 ## Environment variables
 
 Each app has a commented `.env.example`:
 
-- [`apps/api/.env.example`](apps/api/.env.example): `MONGODB_URI`, `JWT_SECRET`, `ENCRYPTION_KEY`, `APP_URL`, `CRON_SECRET`, `SOCIAL_MOCK`, and the OAuth credentials for Meta, Google/YouTube, LinkedIn, TikTok and X
+- [`apps/api/.env.example`](apps/api/.env.example): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`, `ENCRYPTION_KEY`, `APP_URL`, `CRON_SECRET`, `SOCIAL_MOCK`, and the OAuth credentials for Meta, Google/YouTube, LinkedIn, TikTok and X
 - [`apps/web/.env.example`](apps/web/.env.example): `VITE_API_URL`, and `TRACKER_API_URL` (used when building the tracker)
 
 Never commit real `.env` files. They are gitignored.
+
+## Database (Supabase)
+
+The database is **Supabase Postgres**. The API talks to it with `@supabase/supabase-js`, server-side only, using the service-role key. Login is our own (email + password, JWT cookie), not Supabase Auth. See [`docs/decisions.md`](docs/decisions.md).
+
+- **Schema:** SQL migrations in [`supabase/migrations/`](supabase/migrations). Every table has row level security **on, with no policies**, so the public anon key can't read anything. Every query is scoped to the workspace in the API code.
+- **Applying migrations:** with Supabase's GitHub integration, migrations in `supabase/migrations` are applied when they reach the production branch. Manual options: `npx supabase link` then `npx supabase db push`, or paste the file into the Supabase SQL editor.
+- **TypeScript types:** [`apps/api/src/db/database.types.ts`](apps/api/src/db/database.types.ts) matches the schema. After changing a migration, run `npm run db:types` (needs `npx supabase login` and `npx supabase link` once).
+- **Stats queries (Phase 3)** are Postgres functions in a migration, called with `db.rpc(...)`.
+- **Vercel integration:** connect the Supabase project to the **API** Vercel project only. The web project must never get `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## Where each phase's work lives
 
@@ -91,7 +102,7 @@ This repo deploys as **two Vercel projects** from the same Git repo. Both instal
 - **Domain:** `api.[APP_DOMAIN]`
 - **Env vars:** everything in `apps/api/.env.example`, with `NODE_ENV=production`
 - `vercel.json` defines the Cron Jobs (`/api/cron/cleanup-salts` and `/api/cron/social-sync`, daily). Vercel sends `Authorization: Bearer $CRON_SECRET`.
-- MongoDB Atlas network access must allow Vercel (0.0.0.0/0 with a strong password, or the Vercel ↔ Atlas integration).
+- `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` come from the Supabase ↔ Vercel integration. Connect it to this project only (see "Database").
 
 The full launch checklist arrives in Phase 6.
 
@@ -99,4 +110,4 @@ The full launch checklist arrives in Phase 6.
 
 `.github/workflows/ci.yml` runs on every push and PR, in this order: `npm ci` → typecheck → lint → test → `build:tracker` (fails if the tracker is over 1.5 KB gzipped).
 
-> **npm note:** a fresh `npm install` with **no** `package-lock.json` crashes on npm 10.9 (an arborist peer-dependency bug). The committed lockfile avoids it. If you ever delete the lockfile, regenerate it with `npx npm@11 install`.
+> **npm note:** on npm 10.9, adding or removing a dependency, or installing with no `package-lock.json`, crashes (an arborist peer-dependency bug). Use npm 11 for those: `npx npm@11 install <pkg> -w <workspace>`. A plain `npm install` or `npm ci` against the committed lockfile works on npm 10.
