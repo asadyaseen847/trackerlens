@@ -1,11 +1,16 @@
-import { buildSnippet, trackerScriptUrl, type SitesResponse } from '@audience/shared';
+import {
+  buildSnippet,
+  trackerScriptUrl,
+  type SitesResponse,
+  type SiteStatusResponse,
+} from '@audience/shared';
 import { Router } from 'express';
 import { loadEnv } from '../config/env.js';
 import type { AppDeps } from '../createApp.js';
 import { toSiteDto, toSiteListItem } from '../db/mappers.js';
 import { getAuth, requireAuth } from '../middleware/requireAuth.js';
 import { createSite, getSiteInWorkspace, updateSiteSettings } from '../services/sites.service.js';
-import { HttpError, notImplemented } from '../utils/httpError.js';
+import { HttpError } from '../utils/httpError.js';
 
 /** Websites in the signed-in user's workspace (§10). Every :id is checked against it. */
 export function sitesRouter({ repo }: AppDeps): Router {
@@ -50,8 +55,15 @@ export function sitesRouter({ repo }: AppDeps): Router {
     res.json({ html });
   });
 
-  // TODO(Phase 2, §10): { installed, lastEventAt } for "Check installation"
-  router.get('/:id/status', notImplemented(2));
+  // "Check installation" (§10, §11): has the code ever sent a visit?
+  router.get('/:id/status', async (req, res) => {
+    const site = await getSiteInWorkspace(repo, getAuth(res).workspaceId, req.params.id);
+    const body: SiteStatusResponse = {
+      installed: site.last_event_at !== null,
+      lastEventAt: site.last_event_at,
+    };
+    res.json(body);
+  });
 
   return router;
 }

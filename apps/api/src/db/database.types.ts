@@ -7,6 +7,16 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 type Device = 'phone' | 'tablet' | 'desktop';
+
+/** Filters shared by the stats_* functions. */
+type StatsFilterArgs = {
+  p_site_ids: string[];
+  p_start: string;
+  p_end: string;
+  p_channels?: string[] | null;
+  p_device?: Device | null;
+  p_country?: string | null;
+};
 type MemberRole = 'owner' | 'member';
 type SocialAccountStatus = 'connected' | 'needs_reconnect' | 'disconnected';
 
@@ -203,8 +213,81 @@ export type Database = {
       >;
     };
     Views: { [_ in never]: never };
-    // TODO(Phase 3, §9): stats aggregation functions (called with db.rpc).
-    Functions: { [_ in never]: never };
+    /** supabase/migrations/20261014000000_tracking_and_stats.sql */
+    Functions: {
+      get_or_create_salt: { Args: { p_day: string; p_candidate: string }; Returns: string };
+      cleanup_salts: { Args: { p_before: string }; Returns: number };
+      record_page_view: {
+        Args: {
+          p_site_id: string;
+          p_visitor_hash: string;
+          p_at: string;
+          p_path: string;
+          p_channel_id: string;
+          p_platform_id: string;
+          p_source_detail: string | null;
+          p_is_paid: boolean;
+          p_referrer_host: string | null;
+          p_utm_source: string | null;
+          p_utm_medium: string | null;
+          p_utm_campaign: string | null;
+          p_utm_term: string | null;
+          p_utm_content: string | null;
+          p_country_code: string;
+          p_device: Device;
+          p_browser: string | null;
+          p_os: string | null;
+          p_timeout_minutes?: number;
+        };
+        Returns: Array<{ o_visit_id: string; o_new_visit: boolean }>;
+      };
+      stats_kpis: {
+        Args: StatsFilterArgs;
+        Returns: Array<{ visits: number; visitors: number; pageviews: number }>;
+      };
+      stats_series: {
+        Args: StatsFilterArgs & { p_unit: string; p_tz: string };
+        Returns: Array<{ bucket: string; channel_id: string; visits: number }>;
+      };
+      stats_breakdown: {
+        Args: StatsFilterArgs & { p_dimension: string; p_limit: number };
+        Returns: Array<{
+          key: string;
+          label: string;
+          detail: string | null;
+          channel_id: string | null;
+          value: number;
+        }>;
+      };
+      stats_live: {
+        Args: {
+          p_site_ids: string[];
+          p_since: string;
+          p_channels?: string[] | null;
+          p_device?: Device | null;
+          p_country?: string | null;
+        };
+        Returns: number;
+      };
+      stats_site_daily: {
+        Args: { p_site_ids: string[]; p_start: string; p_end: string; p_tz: string };
+        Returns: Array<{ site_id: string; day: string; visits: number }>;
+      };
+      stats_visits_by_platform: {
+        Args: {
+          p_site_ids: string[];
+          p_start: string;
+          p_end: string;
+          p_tz: string;
+          p_unit: string;
+        };
+        Returns: Array<{ platform_id: string; bucket: string; visits: number }>;
+      };
+      purge_expired_data: {
+        Args: Record<string, never>;
+        Returns: Array<{ visits_deleted: number; page_views_deleted: number }>;
+      };
+    };
     Enums: {
       device: Device;
       member_role: MemberRole;

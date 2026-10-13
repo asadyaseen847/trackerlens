@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SITE_KEY_RE } from './constants.js';
 import { checkDomainInput } from './domain.js';
 
 /** True for IANA zones the runtime knows, e.g. "Asia/Karachi". */
@@ -91,13 +92,15 @@ export const updateSiteBodySchema = z
   .refine((v) => Object.values(v).some((x) => x !== undefined), 'Nothing to update.');
 export type UpdateSiteBody = z.input<typeof updateSiteBodySchema>;
 
-// TODO(Phase 2, §7): tighten the tracker payload { s, u, r, w } (lengths, URL checks)
-export const collectPayloadSchema = z.object({
-  s: z.string(),
-  u: z.string(),
-  r: z.string().nullable(),
-  w: z.number(),
-});
+/** What the tracker sends (§6): site key, page URL, referrer, window width. */
+export const collectPayloadSchema = z
+  .object({
+    s: z.string().regex(SITE_KEY_RE),
+    u: z.string().min(1).max(2000),
+    r: z.string().max(2000).nullable(),
+    w: z.number().int().min(0).max(100_000),
+  })
+  .strict();
 export type CollectPayload = z.infer<typeof collectPayloadSchema>;
 
 // TODO(Phase 3, §10): stats query string (site, period, channels, device, country)

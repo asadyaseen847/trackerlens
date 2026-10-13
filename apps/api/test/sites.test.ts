@@ -3,15 +3,19 @@ import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { signedInAgent, testApp } from './helpers.js';
 
+type Db = Awaited<ReturnType<typeof testApp>>['db'];
+const countRows = async (db: Db, table: string) =>
+  (await db.query<{ n: number }>(`select count(*)::int as n from ${table}`)).rows[0]?.n;
+
 describe('sites CRUD', () => {
   it('requires a session', async () => {
-    const { app } = testApp();
+    const { app } = await testApp();
     expect((await request(app).get('/api/sites')).status).toBe(401);
     expect((await request(app).post('/api/sites').send({ domain: 'a.com' })).status).toBe(401);
   });
 
   it('adds a normalized domain with a public site key, then lists it', async () => {
-    const { app } = testApp();
+    const { app } = await testApp();
     const { agent } = await signedInAgent(app);
 
     const created = await agent
@@ -33,7 +37,7 @@ describe('sites CRUD', () => {
   });
 
   it('rejects invalid and duplicate domains with readable messages', async () => {
-    const { app } = testApp();
+    const { app } = await testApp();
     const { agent } = await signedInAgent(app);
 
     const invalid = await agent.post('/api/sites').send({ domain: 'not a website' });
@@ -47,7 +51,7 @@ describe('sites CRUD', () => {
   });
 
   it('updates settings, and paused shows as the status', async () => {
-    const { app } = testApp();
+    const { app } = await testApp();
     const { agent } = await signedInAgent(app);
     const { body: site } = await agent.post('/api/sites').send({ domain: 'a.example.com' });
 
@@ -63,7 +67,7 @@ describe('sites CRUD', () => {
   });
 
   it('returns the snippet for the site', async () => {
-    const { app } = testApp();
+    const { app } = await testApp();
     const { agent } = await signedInAgent(app);
     const { body: site } = await agent.post('/api/sites').send({ domain: 'a.example.com' });
 
@@ -75,29 +79,28 @@ describe('sites CRUD', () => {
   });
 
   it('removes a site', async () => {
-    const { app, repo } = testApp();
+    const { app, db } = await testApp();
     const { agent } = await signedInAgent(app);
     const { body: site } = await agent.post('/api/sites').send({ domain: 'a.example.com' });
 
     await agent.delete(`/api/sites/${site.id}`).expect(204);
-    expect(repo.sites).toHaveLength(0);
+    expect(await countRows(db, 'sites')).toBe(0);
     expect((await agent.get(`/api/sites/${site.id}`)).status).toBe(404);
   });
 
   it('only lets the owner remove a site', async () => {
-    const { app, repo } = testApp();
+    const { app, db } = await testApp();
     const { agent, me } = await signedInAgent(app);
     const { body: site } = await agent.post('/api/sites').send({ domain: 'a.example.com' });
 
-    const member = repo.members.find((m) => m.user_id === me.user.id);
-    if (member) member.role = 'member';
+    await db.query(`update workspace_members set role = 'member' where user_id = $1`, [me.user.id]);
     const res = await agent.delete(`/api/sites/${site.id}`);
     expect(res.status).toBe(403);
-    expect(repo.sites).toHaveLength(1);
+    expect(await countRows(db, 'sites')).toBe(1);
   });
 
   it('answers 404 for ids that are not UUIDs', async () => {
-    const { app } = testApp();
+    const { app } = await testApp();
     const { agent } = await signedInAgent(app);
     expect((await agent.get('/api/sites/not-a-uuid')).status).toBe(404);
   });
@@ -105,7 +108,7 @@ describe('sites CRUD', () => {
 
 describe('workspace isolation (§10, §14)', () => {
   it("never lets one workspace read, change or delete another workspace's site", async () => {
-    const { app, repo } = testApp();
+    const { app, db } = await testApp();
     const alice = await signedInAgent(app, 'Alice');
     const bob = await signedInAgent(app, 'Bob');
 
@@ -125,8 +128,9 @@ describe('workspace isolation (§10, §14)', () => {
     expect((await bob.agent.delete(`/api/sites/${aliceSite.id}`)).status).toBe(404);
 
     // Nothing changed.
-    expect(repo.sites).toHaveLength(1);
-    expect(repo.sites[0]?.paused).toBe(false);
+    expect(await countRows(db, 'sites')).toBe(1);
+    const { rows } = await db.query<{ paused: boolean }>('select paused from sites');
+    expect(rows[0]?.paused).toBe(false);
 
     // The same domain can exist in two different workspaces.
     expect((await bob.agent.post('/api/sites').send({ domain: 'alice.example.com' })).status).toBe(

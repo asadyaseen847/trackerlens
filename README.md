@@ -1,4 +1,4 @@
-# [YOUR BRAND] Audience Tracker
+# TrackerLens
 
 Privacy-friendly traffic analytics: how many people visit your websites, and which platform sent them (Google, Instagram, TikTok, ChatGPT, a newsletter…). It also compares your social media audiences with the visits each platform sends.
 

@@ -1,5 +1,5 @@
 -- =====================================================================================
--- Audience Tracker: database schema (Supabase Postgres)
+-- TrackerLens: database schema (Supabase Postgres)
 --
 -- Design (see docs/database.md for the diagram and the reasons):
 --   * Third normal form: every fact is stored once. Page views point to their visit and

@@ -92,3 +92,15 @@
   margin-top: 7px;
   flex: none;
 }
+
+.checkline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.result {
+  font-weight: 700;
+  font-size: 14px;
+}

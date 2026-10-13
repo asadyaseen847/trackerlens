@@ -12,10 +12,10 @@ import { BuilderGuides } from './BuilderGuides';
 import styles from './Install.module.css';
 import { LinkBuilder } from './LinkBuilder';
 import { SiteSettings } from './SiteSettings';
+import { CheckInstallation } from './CheckInstallation';
 import { SnippetBox } from './SnippetBox';
 import { WhatWeCollect } from './WhatWeCollect';
 
-// TODO(Phase 2, §11): "Check installation" button calling /sites/:id/status.
 export function InstallPage() {
   const { data: sites, isPending, isError, refetch } = useSites();
   const { data: me } = useMe();
@@ -75,6 +75,7 @@ export function InstallPage() {
               }
             >
               <SnippetBox site={site} />
+              <CheckInstallation key={site.id} site={site} />
             </Panel>
 
             <Panel title="Where to paste it" sub="Pick the tool your website is built with">

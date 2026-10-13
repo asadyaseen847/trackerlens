@@ -2,7 +2,7 @@
 
 ## Project
 
-[YOUR BRAND] Audience Tracker: privacy-friendly traffic analytics. It counts visits to a customer's websites and shows which platform sent them.
+TrackerLens: privacy-friendly traffic analytics. It counts visits to a customer's websites and shows which platform sent them.
 It also compares social media audiences (followers, post views) with the website visits each platform sends.
 TypeScript monorepo (npm workspaces): `apps/web` (Vite + React), `apps/api` (Express on Vercel), `packages/shared`, `packages/tracker`. Database: Supabase Postgres (replaces the brief's MongoDB; see `docs/decisions.md`).
 

@@ -6,7 +6,7 @@ const password = 'correct horse battery';
 
 describe('POST /api/auth/signup', () => {
   it('creates the user, a workspace with the timezone, and signs in', async () => {
-    const { app, repo } = testApp();
+    const { app, db } = await testApp();
     const res = await request(app)
       .post('/api/auth/signup')
       .send({ name: 'Asad Yaseen', email: 'Asad@Example.com', password, timezone: 'Asia/Karachi' });
@@ -25,12 +25,13 @@ describe('POST /api/auth/signup', () => {
     expect(cookie).toMatch(/SameSite=Lax/i);
 
     // Stored hashed, never in plain text.
-    expect(repo.users[0]?.password_hash).toMatch(/^\$2[aby]\$/);
-    expect(repo.users[0]?.password_hash).not.toContain(password);
+    const { rows } = await db.query<{ password_hash: string }>('select password_hash from users');
+    expect(rows[0]?.password_hash).toMatch(/^\$2[aby]\$/);
+    expect(rows[0]?.password_hash).not.toContain(password);
   });
 
   it('rejects a duplicate email with 409', async () => {
-    const { app } = testApp();
+    const { app } = await testApp();
     const body = { name: 'A', email: 'dup@example.com', password };
     await request(app).post('/api/auth/signup').send(body).expect(201);
     const res = await request(app).post('/api/auth/signup').send(body);
@@ -39,7 +40,7 @@ describe('POST /api/auth/signup', () => {
   });
 
   it('answers 400 with a readable message for bad input', async () => {
-    const { app } = testApp();
+    const { app } = await testApp();
     const res = await request(app)
       .post('/api/auth/signup')
       .send({ name: 'A', email: 'a@b.co', password: 'short' });
@@ -50,7 +51,7 @@ describe('POST /api/auth/signup', () => {
 
 describe('POST /api/auth/login', () => {
   it('signs in with the right password', async () => {
-    const { app } = testApp();
+    const { app } = await testApp();
     const { email } = await signedInAgent(app);
     const res = await request(app).post('/api/auth/login').send({ email, password });
     expect(res.status).toBe(200);
@@ -59,7 +60,7 @@ describe('POST /api/auth/login', () => {
   });
 
   it('gives the same answer for a wrong password and an unknown email', async () => {
-    const { app } = testApp();
+    const { app } = await testApp();
     const { email } = await signedInAgent(app);
     const wrong = await request(app).post('/api/auth/login').send({ email, password: 'nope-nope' });
     const unknown = await request(app)
@@ -71,7 +72,7 @@ describe('POST /api/auth/login', () => {
   });
 
   it('is rate-limited', async () => {
-    const { app } = testApp({ authMax: 2 });
+    const { app } = await testApp({ authMax: 2 });
     const attempt = () =>
       request(app).post('/api/auth/login').send({ email: 'x@example.com', password: 'whatever1' });
     expect((await attempt()).status).toBe(401);
@@ -84,7 +85,7 @@ describe('POST /api/auth/login', () => {
 
 describe('GET /api/auth/me and logout', () => {
   it('returns the signed-in user, then 401 after logout', async () => {
-    const { app } = testApp();
+    const { app } = await testApp();
     const { agent, email } = await signedInAgent(app);
 
     const me = await agent.get('/api/auth/me');
@@ -96,7 +97,7 @@ describe('GET /api/auth/me and logout', () => {
   });
 
   it('rejects requests without a session or with a forged one', async () => {
-    const { app } = testApp();
+    const { app } = await testApp();
     expect((await request(app).get('/api/auth/me')).status).toBe(401);
     const forged = await request(app).get('/api/auth/me').set('Cookie', 'session=not.a.jwt');
     expect(forged.status).toBe(401);
@@ -105,7 +106,7 @@ describe('GET /api/auth/me and logout', () => {
 
 describe('/api/workspace', () => {
   it('reads and renames the workspace and changes its timezone', async () => {
-    const { app } = testApp();
+    const { app } = await testApp();
     const { agent } = await signedInAgent(app);
 
     const res = await agent.patch('/api/workspace').send({ name: 'Acme', timezone: 'Asia/Seoul' });
@@ -115,7 +116,7 @@ describe('/api/workspace', () => {
   });
 
   it('rejects an invalid timezone', async () => {
-    const { app } = testApp();
+    const { app } = await testApp();
     const { agent } = await signedInAgent(app);
     const res = await agent.patch('/api/workspace').send({ timezone: 'Mars/Base' });
     expect(res.status).toBe(400);

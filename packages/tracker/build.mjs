@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
+import { IGNORE_PARAM } from '@audience/shared';
 import { build } from 'esbuild';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -20,7 +21,11 @@ await build({
   format: 'iife',
   target: 'es2017',
   legalComments: 'none',
-  define: { __API_URL__: JSON.stringify(apiUrl) },
+  define: {
+    __API_URL__: JSON.stringify(apiUrl),
+    // Same constant the dashboard uses for the "ignore my visits" link.
+    __IGNORE_PARAM__: JSON.stringify(IGNORE_PARAM),
+  },
 });
 
 const code = readFileSync(outfile);

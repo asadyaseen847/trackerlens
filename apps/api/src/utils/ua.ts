@@ -1,30 +1,33 @@
 import type { Device } from '@audience/shared';
+import Bowser from 'bowser';
+import { isbot } from 'isbot';
 
 export interface ParsedUserAgent {
-  browser?: string;
-  os?: string;
+  browser: string | null;
+  os: string | null;
 }
 
-/**
- * Browser and OS names from the user agent (bowser). The full UA is never stored.
- * TODO(Phase 2, §7.8): implement.
- */
-export function parseUserAgent(_userAgent: string): ParsedUserAgent {
-  return {};
+/** Browser and OS names only (bowser, MIT). The full user agent is never stored (§14). */
+export function parseUserAgent(userAgent: string): ParsedUserAgent {
+  try {
+    const parser = Bowser.getParser(userAgent);
+    return {
+      browser: parser.getBrowserName() || null,
+      os: parser.getOSName() || null,
+    };
+  } catch {
+    return { browser: null, os: null };
+  }
 }
 
-/**
- * Under 768 is phone, under 1024 is tablet, otherwise desktop.
- * TODO(Phase 2, §7.8): implement.
- */
-export function deviceFromWidth(_width: number): Device {
+/** Under 768 px is a phone, under 1024 px a tablet, otherwise desktop (§7.8). */
+export function deviceFromWidth(width: number): Device {
+  if (width < 768) return 'phone';
+  if (width < 1024) return 'tablet';
   return 'desktop';
 }
 
-/**
- * True when the user agent is missing or isbot flags it.
- * TODO(Phase 2, §7.5): implement.
- */
-export function isBotUserAgent(_userAgent: string | undefined): boolean {
-  return false;
+/** True when the user agent is missing or isbot flags it (§7.5). */
+export function isBotUserAgent(userAgent: string | undefined): boolean {
+  return !userAgent || isbot(userAgent);
 }

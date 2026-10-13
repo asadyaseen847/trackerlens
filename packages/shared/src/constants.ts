@@ -44,45 +44,60 @@ export const SOCIAL_PLATFORMS: ReadonlyArray<ColorEntry<SocialPlatform>> = [
   { id: 'x', label: 'X / Twitter', color: '#A38200', colorDark: '#A88A0C', cssVar: '--p6' },
 ];
 
-/** Display names for platform ids (BUILD_PROMPT §8). Unknown referrer hosts display as-is. */
-export const PLATFORM_LABELS: Readonly<Record<string, string>> = {
-  direct: 'Typed in or bookmarked',
-  google: 'Google',
-  bing: 'Bing',
-  duckduckgo: 'DuckDuckGo',
-  yahoo: 'Yahoo',
-  yandex: 'Yandex',
-  baidu: 'Baidu',
-  ecosia: 'Ecosia',
-  brave: 'Brave Search',
-  facebook: 'Facebook',
-  instagram: 'Instagram',
-  x: 'X / Twitter',
-  linkedin: 'LinkedIn',
-  tiktok: 'TikTok',
-  youtube: 'YouTube',
-  reddit: 'Reddit',
-  pinterest: 'Pinterest',
-  threads: 'Threads',
-  snapchat: 'Snapchat',
-  quora: 'Quora',
-  telegram: 'Telegram',
-  whatsapp: 'WhatsApp',
-  chatgpt: 'ChatGPT',
-  perplexity: 'Perplexity',
-  gemini: 'Gemini',
-  copilot: 'Copilot',
-  claude: 'Claude',
-  gmail: 'Gmail',
-  outlook: 'Outlook',
-  'yahoo-mail': 'Yahoo Mail',
-};
+/**
+ * Known platforms and their channel. Must match the `platforms` seed in
+ * supabase/migrations/20261013000000_initial_schema.sql (a test checks this).
+ * "other" stands for any unknown website or campaign source (detail stored on the visit).
+ */
+export const PLATFORMS: ReadonlyArray<{ id: string; label: string; channel: Channel }> = [
+  { id: 'google', label: 'Google', channel: 'search' },
+  { id: 'bing', label: 'Bing', channel: 'search' },
+  { id: 'duckduckgo', label: 'DuckDuckGo', channel: 'search' },
+  { id: 'yahoo', label: 'Yahoo', channel: 'search' },
+  { id: 'yandex', label: 'Yandex', channel: 'search' },
+  { id: 'baidu', label: 'Baidu', channel: 'search' },
+  { id: 'ecosia', label: 'Ecosia', channel: 'search' },
+  { id: 'brave', label: 'Brave Search', channel: 'search' },
+  { id: 'instagram', label: 'Instagram', channel: 'social' },
+  { id: 'facebook', label: 'Facebook', channel: 'social' },
+  { id: 'youtube', label: 'YouTube', channel: 'social' },
+  { id: 'linkedin', label: 'LinkedIn', channel: 'social' },
+  { id: 'tiktok', label: 'TikTok', channel: 'social' },
+  { id: 'x', label: 'X / Twitter', channel: 'social' },
+  { id: 'reddit', label: 'Reddit', channel: 'social' },
+  { id: 'pinterest', label: 'Pinterest', channel: 'social' },
+  { id: 'threads', label: 'Threads', channel: 'social' },
+  { id: 'snapchat', label: 'Snapchat', channel: 'social' },
+  { id: 'quora', label: 'Quora', channel: 'social' },
+  { id: 'telegram', label: 'Telegram', channel: 'social' },
+  { id: 'whatsapp', label: 'WhatsApp', channel: 'social' },
+  { id: 'chatgpt', label: 'ChatGPT', channel: 'ai' },
+  { id: 'perplexity', label: 'Perplexity', channel: 'ai' },
+  { id: 'gemini', label: 'Gemini', channel: 'ai' },
+  { id: 'copilot', label: 'Copilot', channel: 'ai' },
+  { id: 'claude', label: 'Claude', channel: 'ai' },
+  { id: 'gmail', label: 'Gmail', channel: 'email' },
+  { id: 'outlook', label: 'Outlook', channel: 'email' },
+  { id: 'yahoo-mail', label: 'Yahoo Mail', channel: 'email' },
+  { id: 'direct', label: 'Typed in or bookmarked', channel: 'direct' },
+  { id: 'other', label: 'Other', channel: 'other' },
+];
 
-/** Product name shown in the UI and the snippet comment. Placeholder until the name is final. */
-export const BRAND_NAME = '[YOUR BRAND]';
+/** Display names for platform ids (BUILD_PROMPT §8). Unknown hosts display as-is. */
+export const PLATFORM_LABELS: Readonly<Record<string, string>> = Object.fromEntries(
+  PLATFORMS.map((p) => [p.id, p.label]),
+);
 
-/** Query parameter for "ignore my visits" (`?audience_ignore=1`); also the localStorage key. */
-export const IGNORE_PARAM = 'audience_ignore';
+/** Display name for a platform id or an unknown referrer host. */
+export function platformLabel(id: string): string {
+  return PLATFORM_LABELS[id] ?? id;
+}
+
+/** Product name shown in the UI and the snippet comment. */
+export const BRAND_NAME = 'TrackerLens';
+
+/** Query parameter for "ignore my visits" (`?trackerlens_ignore=1`); also the localStorage key. */
+export const IGNORE_PARAM = 'trackerlens_ignore';
 
 /** Path of the tracker script on the web app's domain (neutral name for ad blockers, §4). */
 export const TRACKER_PATH = '/js/script.js';

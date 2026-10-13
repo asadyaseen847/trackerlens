@@ -1,6 +1,19 @@
--- One-time reset for a database created from an earlier draft of the initial migration.
--- DELETES every app table and its data. Run it only while there is no real data, then run
--- supabase/migrations/20261013000000_initial_schema.sql.
+-- Reset for a database created from an earlier draft of the migrations.
+-- DELETES every app table, function and its data. Run it only while there is no real data,
+-- then run every file in supabase/migrations/ in order.
+
+drop function if exists
+  public.get_or_create_salt,
+  public.cleanup_salts,
+  public.record_page_view,
+  public.stats_kpis,
+  public.stats_series,
+  public.stats_breakdown,
+  public.stats_live,
+  public.stats_site_daily,
+  public.stats_visits_by_platform,
+  public.purge_expired_data
+  cascade;
 
 drop table if exists
   public.page_views,

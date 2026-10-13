@@ -61,7 +61,7 @@ A short log of choices that aren't obvious from the code. Newest first.
 
 ## 2026-10-13: Phase 1, "ignore my visits" parameter
 
-**Decision:** `?audience_ignore=1`, from `IGNORE_PARAM` in `packages/shared/src/constants.ts`, alongside `BRAND_NAME`. Rename both when the product name is final. The Phase 2 tracker must use the same constant.
+**Decision:** `?trackerlens_ignore=1`, from `IGNORE_PARAM` in `packages/shared/src/constants.ts`, alongside `BRAND_NAME` ("TrackerLens"). The tracker imports the same constant.
 
 ## 2026-10-13: `src/app.ts` renamed to `src/createApp.ts`
 

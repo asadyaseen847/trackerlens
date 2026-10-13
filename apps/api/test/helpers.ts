@@ -1,15 +1,16 @@
 import request from 'supertest';
-import { createApp } from '../src/createApp.js';
-import { memoryRepo } from './memoryRepo.js';
+import { createApp, type AppDeps } from '../src/createApp.js';
+import { freshDatabase, pgliteRepo } from './pgliteRepo.js';
 
-/** A fresh app on an empty in-memory database, with a generous auth rate limit. */
-export function testApp(options: { authMax?: number } = {}) {
-  const repo = memoryRepo();
+/** A fresh app on an empty Postgres (PGlite, all migrations applied). */
+export async function testApp(options: { authMax?: number } & Partial<AppDeps> = {}) {
+  const repo = pgliteRepo(await freshDatabase());
   const app = createApp({
     repo,
     authRateLimit: { windowMs: 60_000, max: options.authMax ?? 1000 },
+    ...options,
   });
-  return { app, repo };
+  return { app, repo, db: repo.db };
 }
 
 let counter = 0;
@@ -21,7 +22,20 @@ export async function signedInAgent(app: ReturnType<typeof createApp>, name = 'T
   const res = await agent
     .post('/api/auth/signup')
     .send({ name, email, password: 'correct horse battery', timezone: 'Asia/Karachi' });
-  if (res.status !== 201)
+  if (res.status !== 201) {
     throw new Error(`signup failed: ${res.status} ${JSON.stringify(res.body)}`);
-  return { agent, email, me: res.body as { user: { id: string }; workspace: { id: string } } };
+  }
+  return {
+    agent,
+    email,
+    me: res.body as { user: { id: string }; workspace: { id: string } },
+  };
+}
+
+/** Adds a site through the API and returns it. */
+export async function addSite(agent: request.Agent, domain: string) {
+  const res = await agent.post('/api/sites').send({ domain });
+  if (res.status !== 201)
+    throw new Error(`add site failed: ${res.status} ${JSON.stringify(res.body)}`);
+  return res.body as { id: string; domain: string; siteKey: string };
 }
