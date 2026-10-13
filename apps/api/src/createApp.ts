@@ -26,6 +26,11 @@ export function createApp() {
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());
 
+  // The API's own address has no page; say what it is instead of a bare 404.
+  app.get('/', (_req, res) => {
+    res.json({ ok: true, service: 'api', health: '/api/health' });
+  });
+
   app.use('/api', apiRouter);
 
   app.use(notFoundHandler);

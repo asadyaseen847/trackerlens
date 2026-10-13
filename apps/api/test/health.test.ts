@@ -17,6 +17,14 @@ describe('GET /api/health', () => {
   });
 });
 
+describe('GET /', () => {
+  it('describes the service instead of answering 404', async () => {
+    const res = await request(createApp()).get('/');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, service: 'api', health: '/api/health' });
+  });
+});
+
 describe('placeholder routes', () => {
   it('answer 501 with the phase that builds them', async () => {
     const res = await request(createApp()).get('/api/stats/overview');
