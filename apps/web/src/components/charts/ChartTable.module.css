@@ -1,0 +1,42 @@
+.wrap {
+  overflow-x: auto;
+}
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  padding: 9px 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.table th:first-child,
+.table td:first-child {
+  text-align: left;
+}
+
+.table tbody th,
+.table tfoot th {
+  font-weight: 600;
+}
+
+.table thead th {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 800;
+  border-bottom: 2px solid var(--border);
+}
+
+.table tfoot td,
+.table tfoot th {
+  font-weight: 800;
+  border-bottom: 0;
+  border-top: 2px solid var(--border);
+}

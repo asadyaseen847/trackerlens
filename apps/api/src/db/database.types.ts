@@ -9,14 +9,14 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 type Device = 'phone' | 'tablet' | 'desktop';
 
 /** Filters shared by the stats_* functions. */
-type StatsFilterArgs = {
+type FilterArgs = {
   p_site_ids: string[];
-  p_start: string;
-  p_end: string;
   p_channels?: string[] | null;
   p_device?: Device | null;
   p_country?: string | null;
 };
+/** Days are local dates in the workspace timezone, inclusive. */
+type StatsArgs = FilterArgs & { p_from: string; p_to: string };
 type MemberRole = 'owner' | 'member';
 type SocialAccountStatus = 'connected' | 'needs_reconnect' | 'disconnected';
 
@@ -211,6 +211,64 @@ export type Database = {
         'social_account_id' | 'day',
         [Fk<'social_daily_stats_social_account_id_fkey', 'social_account_id', 'social_accounts'>]
       >;
+      daily_stats: Table<
+        {
+          site_id: string;
+          day: string;
+          channel_id: string;
+          platform_id: string;
+          source_detail: string;
+          utm_campaign: string;
+          device: Device;
+          country_code: string;
+          visits: number;
+          visitors: number;
+          pageviews: number;
+        },
+        'site_id' | 'day' | 'channel_id' | 'platform_id' | 'device' | 'country_code',
+        [
+          Fk<'daily_stats_site_id_fkey', 'site_id', 'sites'>,
+          Fk<'daily_stats_channel_id_fkey', 'channel_id', 'channels'>,
+          Fk<'daily_stats_platform_id_fkey', 'platform_id', 'platforms'>,
+        ]
+      >;
+      daily_totals: Table<
+        {
+          site_id: string;
+          day: string;
+          channel_id: string;
+          device: Device;
+          visits: number;
+          visitors: number;
+          pageviews: number;
+        },
+        'site_id' | 'day' | 'channel_id' | 'device',
+        [
+          Fk<'daily_totals_site_id_fkey', 'site_id', 'sites'>,
+          Fk<'daily_totals_channel_id_fkey', 'channel_id', 'channels'>,
+        ]
+      >;
+      daily_page_totals: Table<
+        { site_id: string; day: string; path: string; pageviews: number },
+        'site_id' | 'day' | 'path',
+        [Fk<'daily_page_totals_site_id_fkey', 'site_id', 'sites'>]
+      >;
+      daily_page_stats: Table<
+        {
+          site_id: string;
+          day: string;
+          path: string;
+          channel_id: string;
+          device: Device;
+          country_code: string;
+          pageviews: number;
+        },
+        'site_id' | 'day' | 'path' | 'channel_id' | 'device' | 'country_code',
+        [
+          Fk<'daily_page_stats_site_id_fkey', 'site_id', 'sites'>,
+          Fk<'daily_page_stats_channel_id_fkey', 'channel_id', 'channels'>,
+        ]
+      >;
     };
     Views: { [_ in never]: never };
     /** supabase/migrations/20261014000000_tracking_and_stats.sql */
@@ -241,16 +299,17 @@ export type Database = {
         };
         Returns: Array<{ o_visit_id: string; o_new_visit: boolean }>;
       };
+      rebuild_daily_stats: { Args: { p_site_ids: string[] }; Returns: number };
       stats_kpis: {
-        Args: StatsFilterArgs;
+        Args: StatsArgs;
         Returns: Array<{ visits: number; visitors: number; pageviews: number }>;
       };
       stats_series: {
-        Args: StatsFilterArgs & { p_unit: string; p_tz: string };
+        Args: StatsArgs & { p_unit: string };
         Returns: Array<{ bucket: string; channel_id: string; visits: number }>;
       };
       stats_breakdown: {
-        Args: StatsFilterArgs & { p_dimension: string; p_limit: number };
+        Args: StatsArgs & { p_dimension: string; p_limit: number };
         Returns: Array<{
           key: string;
           label: string;
@@ -259,29 +318,10 @@ export type Database = {
           value: number;
         }>;
       };
-      stats_live: {
-        Args: {
-          p_site_ids: string[];
-          p_since: string;
-          p_channels?: string[] | null;
-          p_device?: Device | null;
-          p_country?: string | null;
-        };
-        Returns: number;
-      };
+      stats_live: { Args: FilterArgs & { p_since: string }; Returns: number };
       stats_site_daily: {
-        Args: { p_site_ids: string[]; p_start: string; p_end: string; p_tz: string };
+        Args: { p_site_ids: string[]; p_from: string; p_to: string };
         Returns: Array<{ site_id: string; day: string; visits: number }>;
-      };
-      stats_visits_by_platform: {
-        Args: {
-          p_site_ids: string[];
-          p_start: string;
-          p_end: string;
-          p_tz: string;
-          p_unit: string;
-        };
-        Returns: Array<{ platform_id: string; bucket: string; visits: number }>;
       };
       purge_expired_data: {
         Args: Record<string, never>;

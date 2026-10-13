@@ -23,7 +23,9 @@
     "test": "npm run test --workspaces --if-present",
     "test:e2e": "playwright test -c e2e/playwright.config.ts",
     "seed": "tsx --env-file-if-exists=apps/api/.env scripts/seed.ts",
-    "db:types": "npx -y supabase@2.120.0 gen types typescript --linked --schema public > apps/api/src/db/database.types.ts && prettier --write apps/api/src/db/database.types.ts"
+    "db:types": "npx -y supabase@2.120.0 gen types typescript --linked --schema public > apps/api/src/db/database.types.ts && prettier --write apps/api/src/db/database.types.ts",
+    "dev:demo": "concurrently -k -n shared,api,web -c magenta,blue,green \"npm run dev -w @audience/shared\" \"tsx scripts/demo-server.ts\" \"npm run dev -w @audience/web\"",
+    "bench": "tsx scripts/bench.ts"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

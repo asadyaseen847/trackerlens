@@ -13,6 +13,68 @@ A short log of choices that aren't obvious from the code. Newest first.
 
 ---
 
+## 2026-10-14: Product name TrackerLens
+
+**Decision:** `BRAND_NAME = 'TrackerLens'` and `IGNORE_PARAM = 'trackerlens_ignore'` in `packages/shared/src/constants.ts`. The tracker gets the parameter at build time (`build.mjs` `define`).
+
+## 2026-10-14: Tests run on PGlite (real Postgres in memory) instead of a hand-written fake
+
+**Context:** Phases 2–3 put the core logic in SQL functions (atomic page-view recording, timezone bucketing, breakdowns), which a JavaScript fake can't run.
+**Decision:**
+
+- `apps/api/test/pgliteRepo.ts` runs every migration in PGlite. It builds the database once per test worker and clones it per test.
+- The same setup powers `npm run dev:demo`, `npm run bench` and the end-to-end test.
+- `@electric-sql/pglite` is a dev-only dependency; production never imports it.
+
+**Why:** The tests exercise the real schema, constraints and SQL, including that stats match raw counts exactly, without needing a Supabase project in CI.
+
+## 2026-10-14: Tracking and stats logic as Postgres functions
+
+**Decision:**
+
+- `record_page_view` does the whole visit step in one call (find or extend the visit, insert the page view, update the site's events) under `pg_advisory_xact_lock(site + visitor)`.
+- Stats are `stats_*` functions. The period math lives in `packages/shared/src/periods.ts`. Buckets are matched by local start date (`YYYY-MM-DD`), the same key `to_char(date_trunc(unit, ts at time zone tz))` returns.
+
+**Why:** One round trip per hit on serverless; no duplicate visits from two quick hits; DST-correct bucketing in SQL. The period math is unit-tested, including 23/25-hour days and year boundaries.
+
+## 2026-10-14: Unknown sources are platform "other" + source_detail
+
+**Decision:** `classify()` returns a known platform id or `other`. For `other`, the referring host or raw `utm_source` goes in `sourceDetail` (`visits.source_detail`), and breakdowns show that text as the platform name.
+**Why:** It keeps `visits.platform_id` a foreign key to `platforms` (normalized schema) while still showing "news.ycombinator.com". This deviates from §8's "platform = referrer host".
+
+## 2026-10-14: Collect endpoint details
+
+**Decision:**
+
+- Mounted at `/api/e` before `express.json()`, with its own `text/plain` parser (2 KB) and error handler that always answers 202.
+- The work runs before the response, because a Vercel function can freeze after it responds.
+- The site cache (60 s) and the daily salt are memoized per function instance.
+- The IP is read from `x-forwarded-for` / `x-real-ip` and used only for the hash.
+
+## 2026-10-14: Unique visitors and repeat visits
+
+**Decision:** "Unique visitors" is `count(distinct visitor_hash)` in the range, as §9 defines. Because the hash changes daily, a person counts once per day. The KPI tile explains this in an info tooltip.
+
+## 2026-10-14: Social (Phase 4)
+
+**Decision:**
+
+- Tokens use AES-256-GCM: `v1.<iv>.<tag>.<ciphertext>`, a random 12-byte IV, and the key from `ENCRYPTION_KEY`. There's a fixed dev key outside production.
+- The OAuth `state` is a 10-minute HS256 JWT bound to workspace, user and platform.
+- The mock provider's callback URL is relative, so sample data works before `APP_URL` is set.
+- The first sync backfills 548 days for the mock and 90 days for real providers; later syncs fetch from the last sync to yesterday (UTC).
+- "Visits to your websites" for a platform is the website visits whose `platform_id` matches.
+
+**Deviation from the prototype:** the prototype makes every Connect button and the "Best" badge lime. §12 rule 1 allows one lime element per screen (the Followers tile), so Connect buttons are dark and Best uses the track color.
+
+## 2026-10-14: Phase 6 operations
+
+**Decision:**
+
+- Logs are one JSON line per event. When `ERROR_WEBHOOK_URL` is set, errors are also posted there (Slack/Discord, fire-and-forget). Nothing paid.
+- The retention cron runs weekly (Monday 03:30 UTC). The Hobby plan allows 100 cron jobs, each at most daily.
+- Rate limiting: the in-memory limiter stays as a safety net; Vercel Firewall rules are the real limit (README).
+
 ## 2026-10-13: Normalized database schema (replaces the first draft)
 
 **Context:** The owner asked for the best-structured, easy-to-understand database. The first draft translated the brief's MongoDB model directly: page views copied channel/platform/country/device, platform was free text, and the table was named `sessions`.
@@ -144,3 +206,24 @@ A short log of choices that aren't obvious from the code. Newest first.
 
 **Decision:** `workspaces.retention_months` (default 25). The Phase 6 weekly cron enforces it.
 **Why:** §5 asks for a configurable setting, and the workspace is the natural place for it.
+
+## 2026-10-14: Dashboard numbers come from daily rollups
+
+**Decision:** Four summary tables are updated with every tracked hit, inside `record_page_view`:
+
+- `daily_totals`: per site, local day, channel and device;
+- `daily_stats`: the same, plus platform, source detail, campaign and country;
+- `daily_page_totals`: per site, local day and page;
+- `daily_page_stats`: the same, plus the visit's channel, device and country.
+
+All KPIs, charts, lists and site cards read them, each query from the smallest table that can answer it (see `docs/database.md`). Only "on the site right now" reads `visits`.
+
+- `rebuild_daily_stats()` recreates all four from the raw rows. It runs after bulk imports and when a workspace changes its timezone.
+- Every period is whole local days: "vs before" is the same number of whole days, weeks or months.
+
+**Why:** §17 asks for stats under 500 ms on 1M page views. Raw scans took 0.5–2.7 s in `npm run bench`.
+
+- Small tables are needed because one detailed table barely compresses spread-out traffic: the demo has about 130 kinds of visit per site per day.
+- Updating the rollups in the same transaction, rather than by cron, keeps the numbers live and exact.
+
+**Visitors** are counted once per day, because the visitor hash changes daily. Each visitor counts under their first visit of the day, so filtered visitor counts mean "people whose first visit of the day matched the filter".

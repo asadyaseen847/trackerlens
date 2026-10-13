@@ -18,7 +18,7 @@ const DEV_JWT_SECRET = 'dev-only-insecure-jwt-secret';
 const EMAIL_TAKEN = 'An account with this email already exists. Log in instead.';
 const BAD_LOGIN = 'Email or password is wrong.';
 
-function jwtSecret(): string {
+export function jwtSecret(): string {
   const env = loadEnv();
   if (env.JWT_SECRET) return env.JWT_SECRET;
   // loadEnv() already refuses to start production without JWT_SECRET.

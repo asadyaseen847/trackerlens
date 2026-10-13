@@ -1,3 +1,43 @@
+.chart {
+  position: relative;
+  border-radius: 8px;
+  outline-offset: 4px;
+  touch-action: pan-y;
+}
+
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.ax {
+  font: 12px var(--font-body);
+  fill: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.axOn {
+  font-weight: 800;
+  fill: var(--ink);
+}
+
+.grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.base {
+  stroke: var(--border);
+  stroke-width: 2;
+}
+
+.hatch {
+  stroke: var(--surface);
+  stroke-width: 3;
+}
+
 .empty {
   min-height: 220px;
   display: grid;
@@ -7,4 +47,55 @@
   border: 2px dashed var(--line);
   border-radius: 14px;
   padding: 20px;
+}
+
+.tip {
+  position: absolute;
+  top: 8px;
+  min-width: 200px;
+  max-width: 250px;
+  pointer-events: none;
+  background: var(--tip-bg);
+  color: var(--tip-fg);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 4px 4px 0 var(--accent);
+  font-size: 13px;
+  z-index: 3;
+}
+
+.tipDate {
+  color: var(--tip-muted);
+}
+
+.tipTotal {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  margin: 2px 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tipRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.75;
+}
+
+.tipRow span:nth-child(2) {
+  flex: 1 1 auto;
+}
+
+.tipRow span:last-child {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.sw {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+  display: inline-block;
 }

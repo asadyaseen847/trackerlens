@@ -3,6 +3,8 @@ import styles from './StatusChip.module.css';
 
 export interface StatusChipProps {
   status: SiteStatus;
+  /** Overrides the default text ("Live", "Waiting", "Paused"). */
+  label?: string;
 }
 
 const LABELS: Record<SiteStatus, string> = {
@@ -12,6 +14,6 @@ const LABELS: Record<SiteStatus, string> = {
 };
 
 /** Site status chip (§11). */
-export function StatusChip({ status }: StatusChipProps) {
-  return <span className={`${styles.status} ${styles[status]}`}>{LABELS[status]}</span>;
+export function StatusChip({ status, label }: StatusChipProps) {
+  return <span className={`${styles.status} ${styles[status]}`}>{label ?? LABELS[status]}</span>;
 }

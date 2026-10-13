@@ -1,4 +1,5 @@
-import { Outlet, useLocation } from 'react-router';
+import { BRAND_NAME } from '@audience/shared';
+import { Link, Outlet, useLocation } from 'react-router';
 import styles from './AppShell.module.css';
 import { activeTab, Tabs } from './Tabs';
 import { TopBar } from './TopBar';
@@ -22,6 +23,10 @@ export function AppShell({ variant }: AppShellProps) {
       >
         <Outlet />
       </main>
+      <footer className={styles.footer}>
+        <span>{BRAND_NAME} · cookie-free website analytics</span>
+        <Link to="/privacy">Privacy</Link>
+      </footer>
     </div>
   );
 }

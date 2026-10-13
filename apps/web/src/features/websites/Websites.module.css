@@ -1,0 +1,248 @@
+.headrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.insight {
+  margin-top: 10px;
+  font-size: 17px;
+  max-width: 70ch;
+}
+
+.insight b {
+  font-weight: 800;
+}
+
+.range {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.range b {
+  color: var(--ink);
+}
+
+/* ---------- site cards ---------- */
+.sites {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+  gap: 16px;
+}
+
+.site {
+  text-align: left;
+  background: var(--surface);
+  color: var(--ink);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  padding: 16px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+
+.site[aria-pressed='true'] {
+  background: var(--pressed-bg);
+  color: var(--pressed-fg);
+}
+
+.site[aria-pressed='true'] .sub {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.host {
+  font-weight: 800;
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.add {
+  border-style: dashed;
+  box-shadow: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 150px;
+  font-weight: 800;
+}
+
+.plus {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .site {
+    transition: background-color 0.15s ease;
+  }
+}
+
+/* ---------- filters ---------- */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.showAll {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+/* ---------- tiles ---------- */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 18px;
+}
+
+.info {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  font-size: 12px;
+  font-weight: 800;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.infoText {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: -10px;
+  width: min(260px, 70vw);
+  background: var(--tip-bg);
+  color: var(--tip-fg);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: left;
+  z-index: 5;
+  box-shadow: 4px 4px 0 var(--accent);
+}
+
+.pulse {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  flex: none;
+}
+
+.pulse i,
+.pulse b {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--t-direct);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pulse i {
+    animation: ping 1.8s ease-out infinite;
+  }
+
+  @keyframes ping {
+    0% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+
+    70%,
+    100% {
+      transform: scale(2.3);
+      opacity: 0;
+    }
+  }
+}
+
+.livenote {
+  align-self: flex-start;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+}
+
+/* ---------- chart panel ---------- */
+.note {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.panelActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.csv {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.where {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  gap: 22px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}

@@ -6,6 +6,10 @@ drop function if exists
   public.get_or_create_salt,
   public.cleanup_salts,
   public.record_page_view,
+  public.rebuild_daily_stats,
+  public.stats_rollup_kpis,
+  public.stats_rollup_series,
+  public.stats_rollup_breakdown,
   public.stats_kpis,
   public.stats_series,
   public.stats_breakdown,
@@ -16,6 +20,10 @@ drop function if exists
   cascade;
 
 drop table if exists
+  public.daily_stats,
+  public.daily_page_stats,
+  public.daily_totals,
+  public.daily_page_totals,
   public.page_views,
   public.pageviews,
   public.visits,

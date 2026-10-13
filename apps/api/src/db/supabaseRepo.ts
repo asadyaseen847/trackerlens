@@ -1,5 +1,13 @@
 import type { PostgrestError } from '@supabase/supabase-js';
-import { recordPageViewArgs, statsArgs, UniqueViolationError, type Repo } from './repo.js';
+import {
+  recordPageViewArgs,
+  filterArgs,
+  statsArgs,
+  toBreakdownRow,
+  toKpis,
+  UniqueViolationError,
+  type Repo,
+} from './repo.js';
 import { getDb } from './supabase.js';
 
 /** Turn a PostgREST error into an exception; Postgres 23505 becomes UniqueViolationError. */
@@ -130,21 +138,10 @@ export function supabaseRepo(): Repo {
 
     /* ---------- stats ---------- */
     async statsKpis(q) {
-      const rows = must(
-        await getDb().rpc('stats_kpis', { ...statsArgs(q), p_start: q.start, p_end: q.end }),
-      );
-      return rows[0] ?? { visits: 0, visitors: 0, pageviews: 0 };
+      return toKpis(must(await getDb().rpc('stats_kpis', statsArgs(q)))[0]);
     },
-    async statsSeries(q, unit, timezone) {
-      const rows = must(
-        await getDb().rpc('stats_series', {
-          ...statsArgs(q),
-          p_start: q.start,
-          p_end: q.end,
-          p_unit: unit,
-          p_tz: timezone,
-        }),
-      );
+    async statsSeries(q, unit) {
+      const rows = must(await getDb().rpc('stats_series', { ...statsArgs(q), p_unit: unit }));
       return rows.map((r) => ({
         bucket: r.bucket,
         channelId: r.channel_id,
@@ -155,49 +152,27 @@ export function supabaseRepo(): Repo {
       const rows = must(
         await getDb().rpc('stats_breakdown', {
           ...statsArgs(q),
-          p_start: q.start,
-          p_end: q.end,
           p_dimension: dimension,
           p_limit: limit,
         }),
       );
-      return rows.map((r) => ({
-        key: r.key,
-        label: r.label,
-        detail: r.detail,
-        channelId: r.channel_id,
-        value: Number(r.value),
-      }));
+      return rows.map(toBreakdownRow);
     },
-    async statsLive(q, since) {
-      return Number(must(await getDb().rpc('stats_live', { ...statsArgs(q), p_since: since })));
-    },
-    async statsSiteDaily(siteIds, start, end, timezone) {
+    async statsSiteDaily(siteIds, fromDay, toDay) {
       const rows = must(
         await getDb().rpc('stats_site_daily', {
           p_site_ids: siteIds,
-          p_start: start,
-          p_end: end,
-          p_tz: timezone,
+          p_from: fromDay,
+          p_to: toDay,
         }),
       );
       return rows.map((r) => ({ siteId: r.site_id, day: r.day, visits: Number(r.visits) }));
     },
-    async statsVisitsByPlatform(siteIds, start, end, timezone, unit) {
-      const rows = must(
-        await getDb().rpc('stats_visits_by_platform', {
-          p_site_ids: siteIds,
-          p_start: start,
-          p_end: end,
-          p_tz: timezone,
-          p_unit: unit,
-        }),
-      );
-      return rows.map((r) => ({
-        platformId: r.platform_id,
-        bucket: r.bucket,
-        visits: Number(r.visits),
-      }));
+    async statsLive(q, since) {
+      return Number(must(await getDb().rpc('stats_live', { ...filterArgs(q), p_since: since })));
+    },
+    async rebuildDailyStats(siteIds) {
+      return Number(must(await getDb().rpc('rebuild_daily_stats', { p_site_ids: siteIds })));
     },
 
     /* ---------- social ---------- */

@@ -103,5 +103,38 @@ export const collectPayloadSchema = z
   .strict();
 export type CollectPayload = z.infer<typeof collectPayloadSchema>;
 
-// TODO(Phase 3, §10): stats query string (site, period, channels, device, country)
-export const statsQuerySchema = z.object({});
+/* ---------- stats (§10) ---------- */
+
+const CHANNEL_IDS = ['social', 'search', 'email', 'ai', 'direct', 'other'] as const;
+const emptyToUndefined = (v: unknown) => (v === '' || v === null ? undefined : v);
+
+/** ?site=&period=&channels=&device=&country= — the dashboard's filters. */
+export const statsQuerySchema = z.object({
+  site: z.preprocess(emptyToUndefined, z.union([z.literal('all'), z.uuid()]).default('all')),
+  period: z.preprocess(
+    emptyToUndefined,
+    z.enum(['daily', 'weekly', 'monthly', 'yearly']).default('daily'),
+  ),
+  channels: z.preprocess(
+    (v) => (typeof v === 'string' && v !== '' ? v.split(',') : undefined),
+    z.array(z.enum(CHANNEL_IDS)).min(1).optional(),
+  ),
+  device: z.preprocess(emptyToUndefined, z.enum(['phone', 'tablet', 'desktop']).optional()),
+  country: z.preprocess(
+    (v) => (typeof v === 'string' && v !== '' ? v.toUpperCase() : undefined),
+    z
+      .string()
+      .regex(/^[A-Z]{2}$/)
+      .optional(),
+  ),
+});
+export type StatsQueryParams = z.output<typeof statsQuerySchema>;
+
+export const breakdownQuerySchema = statsQuerySchema.extend({
+  dimension: z.enum(['platform', 'page', 'campaign', 'country', 'device']),
+  limit: z.coerce.number().int().min(1).max(250).default(10),
+});
+
+export const socialQuerySchema = z.object({
+  period: statsQuerySchema.shape.period,
+});

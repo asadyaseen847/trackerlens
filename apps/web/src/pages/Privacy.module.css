@@ -1,0 +1,34 @@
+.wrap {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.lead {
+  font-size: 17px;
+  max-width: 65ch;
+}
+
+.text {
+  font-size: 15px;
+  max-width: 70ch;
+}
+
+.list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.list code {
+  font-family: var(--font-code);
+  font-size: 13px;
+  background: var(--track);
+  padding: 1px 6px;
+  border-radius: 6px;
+}

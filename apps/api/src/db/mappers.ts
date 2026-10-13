@@ -32,11 +32,13 @@ export function toSiteDto(row: SiteRow): SiteDto {
   };
 }
 
-export function toSiteListItem(row: SiteRow): SiteListItem {
+export function toSiteListItem(
+  row: SiteRow,
+  stats: { visits30d: number; sparkline: number[] } | undefined,
+): SiteListItem {
   return {
     ...toSiteDto(row),
-    // TODO(Phase 3, §10): visits in the last 30 days and a 14-day sparkline from visits.
-    visits30d: 0,
-    sparkline: Array.from({ length: 14 }, () => 0),
+    visits30d: stats?.visits30d ?? 0,
+    sparkline: stats?.sparkline ?? Array.from({ length: 14 }, () => 0),
   };
 }

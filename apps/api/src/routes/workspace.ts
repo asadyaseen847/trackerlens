@@ -24,7 +24,13 @@ export function workspaceRouter({ repo }: AppDeps): Router {
     const patch: TablesUpdate<'workspaces'> = {};
     if (body.name !== undefined) patch.name = body.name;
     if (body.timezone !== undefined) patch.timezone = body.timezone;
+    const before = await repo.findWorkspaceById(workspaceId);
     const workspace = await repo.updateWorkspace(workspaceId, patch);
+    if (before && before.timezone !== workspace.timezone) {
+      // daily_stats is keyed by local day, so a new timezone moves every visit's day.
+      const sites = await repo.listSites(workspaceId);
+      if (sites.length) await repo.rebuildDailyStats(sites.map((s) => s.id));
+    }
     res.json(toWorkspaceDto(workspace, role));
   });
 

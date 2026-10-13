@@ -10,6 +10,7 @@ import type { AppDeps } from '../createApp.js';
 import { toSiteDto, toSiteListItem } from '../db/mappers.js';
 import { getAuth, requireAuth } from '../middleware/requireAuth.js';
 import { createSite, getSiteInWorkspace, updateSiteSettings } from '../services/sites.service.js';
+import { siteCardStats } from '../services/stats.service.js';
 import { HttpError } from '../utils/httpError.js';
 
 /** Websites in the signed-in user's workspace (§10). Every :id is checked against it. */
@@ -18,8 +19,13 @@ export function sitesRouter({ repo }: AppDeps): Router {
   router.use(requireAuth(repo));
 
   router.get('/', async (_req, res) => {
-    const sites = await repo.listSites(getAuth(res).workspaceId);
-    const body: SitesResponse = { sites: sites.map(toSiteListItem) };
+    const { workspaceId } = getAuth(res);
+    const [sites, workspace] = await Promise.all([
+      repo.listSites(workspaceId),
+      repo.findWorkspaceById(workspaceId),
+    ]);
+    const stats = await siteCardStats(repo, sites, workspace?.timezone ?? 'UTC');
+    const body: SitesResponse = { sites: sites.map((s) => toSiteListItem(s, stats.get(s.id))) };
     res.json(body);
   });
 

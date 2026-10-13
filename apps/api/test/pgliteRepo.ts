@@ -1,7 +1,23 @@
 import { PGlite, types } from '@electric-sql/pglite';
 import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { recordPageViewArgs, statsArgs, UniqueViolationError, type Repo } from '../src/db/repo.js';
+import {
+  recordPageViewArgs,
+  filterArgs,
+  statsArgs,
+  toBreakdownRow,
+  toKpis,
+  UniqueViolationError,
+  type Repo,
+} from '../src/db/repo.js';
+
+type BreakdownSqlRow = {
+  key: string;
+  label: string;
+  detail: string | null;
+  channel_id: string | null;
+  value: number;
+};
 
 const MIGRATIONS_DIR = fileURLToPath(new URL('../../../supabase/migrations/', import.meta.url));
 
@@ -161,71 +177,49 @@ export function pgliteRepo(db: PGlite): Repo & { db: PGlite } {
     async statsKpis(q) {
       const [row] = await rpc<{ visits: number; visitors: number; pageviews: number }>(
         'stats_kpis',
-        {
-          ...statsArgs(q),
-          p_start: q.start,
-          p_end: q.end,
-        },
+        statsArgs(q),
       );
-      return row ?? { visits: 0, visitors: 0, pageviews: 0 };
+      return toKpis(row);
     },
-    async statsSeries(q, unit, timezone) {
+    async statsSeries(q, unit) {
       const rows = await rpc<{ bucket: string; channel_id: string; visits: number }>(
         'stats_series',
-        {
-          ...statsArgs(q),
-          p_start: q.start,
-          p_end: q.end,
-          p_unit: unit,
-          p_tz: timezone,
-        },
+        { ...statsArgs(q), p_unit: unit },
       );
-      return rows.map((r) => ({ bucket: r.bucket, channelId: r.channel_id, visits: r.visits }));
+      return rows.map((r) => ({
+        bucket: r.bucket,
+        channelId: r.channel_id,
+        visits: Number(r.visits),
+      }));
     },
     async statsBreakdown(q, dimension, limit) {
-      const rows = await rpc<{
-        key: string;
-        label: string;
-        detail: string | null;
-        channel_id: string | null;
-        value: number;
-      }>('stats_breakdown', {
+      const rows = await rpc<BreakdownSqlRow>('stats_breakdown', {
         ...statsArgs(q),
-        p_start: q.start,
-        p_end: q.end,
         p_dimension: dimension,
         p_limit: limit,
       });
-      return rows.map((r) => ({
-        key: r.key,
-        label: r.label,
-        detail: r.detail,
-        channelId: r.channel_id,
-        value: r.value,
-      }));
+      return rows.map(toBreakdownRow);
+    },
+    async statsSiteDaily(siteIds, fromDay, toDay) {
+      const rows = await rpc<{ site_id: string; day: string; visits: number }>('stats_site_daily', {
+        p_site_ids: siteIds,
+        p_from: fromDay,
+        p_to: toDay,
+      });
+      return rows.map((r) => ({ siteId: r.site_id, day: r.day, visits: Number(r.visits) }));
     },
     async statsLive(q, since) {
       const [row] = await rpc<{ stats_live: number }>('stats_live', {
-        ...statsArgs(q),
+        ...filterArgs(q),
         p_since: since,
       });
-      return row!.stats_live;
+      return Number(row!.stats_live);
     },
-    async statsSiteDaily(siteIds, start, end, timezone) {
-      const rows = await rpc<{ site_id: string; day: string; visits: number }>('stats_site_daily', {
+    async rebuildDailyStats(siteIds) {
+      const [row] = await rpc<{ rebuild_daily_stats: number }>('rebuild_daily_stats', {
         p_site_ids: siteIds,
-        p_start: start,
-        p_end: end,
-        p_tz: timezone,
       });
-      return rows.map((r) => ({ siteId: r.site_id, day: r.day, visits: r.visits }));
-    },
-    async statsVisitsByPlatform(siteIds, start, end, timezone, unit) {
-      const rows = await rpc<{ platform_id: string; bucket: string; visits: number }>(
-        'stats_visits_by_platform',
-        { p_site_ids: siteIds, p_start: start, p_end: end, p_tz: timezone, p_unit: unit },
-      );
-      return rows.map((r) => ({ platformId: r.platform_id, bucket: r.bucket, visits: r.visits }));
+      return Number(row!.rebuild_daily_stats);
     },
 
     listSocialAccounts: (workspaceId) =>
@@ -265,20 +259,29 @@ export function pgliteRepo(db: PGlite): Repo & { db: PGlite } {
     getSocialTokens: (id) =>
       one('select * from social_account_tokens where social_account_id = $1', [id]),
     async upsertSocialDailyStats(rows) {
-      for (const r of rows) {
+      // Batched: one statement per 500 days.
+      for (let i = 0; i < rows.length; i += 500) {
+        const params: unknown[] = [];
+        const values = rows
+          .slice(i, i + 500)
+          .map((r) => {
+            const cells = [
+              r.social_account_id,
+              r.day,
+              r.followers ?? null,
+              r.views ?? null,
+              r.engagements ?? null,
+              r.link_clicks ?? null,
+            ];
+            return `(${cells.map((v) => `$${params.push(v)}`).join(', ')})`;
+          })
+          .join(', ');
         await run(
           `insert into social_daily_stats (social_account_id, day, followers, views, engagements, link_clicks)
-           values ($1, $2, $3, $4, $5, $6)
+           values ${values}
            on conflict (social_account_id, day) do update set followers = excluded.followers,
              views = excluded.views, engagements = excluded.engagements, link_clicks = excluded.link_clicks`,
-          [
-            r.social_account_id,
-            r.day,
-            r.followers ?? null,
-            r.views ?? null,
-            r.engagements ?? null,
-            r.link_clicks ?? null,
-          ],
+          params,
         );
       }
     },

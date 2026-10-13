@@ -109,6 +109,32 @@ describe('POST /api/e', () => {
     expect(await rows(db, 'select 1 from visits')).toHaveLength(2);
   });
 
+  it('keeps the daily rollup equal to a rebuild from the raw rows', async () => {
+    const { app, db, site, pv } = await setup();
+    await hit(app, pv('https://shop.example.com/', 'https://www.google.com/'));
+    await hit(app, pv('https://shop.example.com/a', 'https://shop.example.com/'));
+    await hit(app, pv('https://shop.example.com/', 'https://l.instagram.com/'), {
+      'X-Forwarded-For': '198.51.100.9',
+    });
+    const read = async () => ({
+      stats: await rows(db, 'select * from daily_stats order by channel_id'),
+      totals: await rows(db, 'select * from daily_totals order by channel_id'),
+      pages: await rows(db, 'select * from daily_page_stats order by path, channel_id'),
+      pageTotals: await rows(db, 'select * from daily_page_totals order by path'),
+    });
+    const live = await read();
+    expect(live.totals).toMatchObject([
+      { channel_id: 'search', visits: 1, visitors: 1, pageviews: 2 },
+      { channel_id: 'social', visits: 1, visitors: 1, pageviews: 1 },
+    ]);
+    expect(live.pageTotals).toMatchObject([
+      { path: '/', pageviews: 2 },
+      { path: '/a', pageviews: 1 },
+    ]);
+    await db.query('select rebuild_daily_stats($1::uuid[])', [[site.id]]);
+    expect(await read()).toEqual(live);
+  });
+
   it('marks the site live and remembers the first visit', async () => {
     const { app, agent, site, pv } = await setup();
     expect((await agent.get(`/api/sites/${site.id}/status`)).body).toEqual({

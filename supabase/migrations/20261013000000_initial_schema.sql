@@ -209,7 +209,9 @@ comment on column public.visits.referrer_host is 'Host of document.referrer on t
 comment on column public.visits.country_code is 'ISO 3166-1 alpha-2 from Vercel''s x-vercel-ip-country; XX when unknown.';
 comment on column public.visits.browser is 'Browser name only (e.g. Chrome), parsed from the user agent.';
 comment on column public.visits.os is 'Operating system name only (e.g. Android).';
-create index visits_site_started_idx on public.visits (site_id, started_at);
+-- Covering index: stats read every column they need from the index (index-only scans).
+create index visits_site_started_idx on public.visits (site_id, started_at)
+  include (visitor_hash, channel_id, platform_id, source_detail, device, country_code, utm_campaign);
 create index visits_site_visitor_last_seen_idx on public.visits (site_id, visitor_hash, last_seen_at desc);
 create index visits_site_last_seen_idx on public.visits (site_id, last_seen_at desc);
 create index visits_platform_id_idx on public.visits (platform_id);
@@ -226,7 +228,7 @@ comment on table public.page_views is
   'Every page view. Source, device and country come from the visit (join on visit_id). '
   'site_id is kept because every query scans one site''s time range.';
 comment on column public.page_views.path is 'Page path without the domain, query string or #hash.';
-create index page_views_site_viewed_idx on public.page_views (site_id, viewed_at);
+create index page_views_site_viewed_idx on public.page_views (site_id, viewed_at) include (path, visit_id);
 create index page_views_visit_id_idx on public.page_views (visit_id);
 create index page_views_viewed_brin_idx on public.page_views using brin (viewed_at);
 

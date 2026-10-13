@@ -35,15 +35,23 @@ export interface RecordPageViewInput {
 }
 
 /** Filters shared by every stats query (§9). Sites are already scoped to the workspace. */
-export interface StatsQuery {
+export interface StatsFilters {
   siteIds: string[];
-  /** ISO instant, inclusive. */
-  start: string;
-  /** ISO instant, exclusive. */
-  end: string;
   channels: string[] | null;
   device: Device | null;
   country: string | null;
+}
+
+/** Filters over local days in the workspace timezone (YYYY-MM-DD, inclusive). */
+export interface StatsQuery extends StatsFilters {
+  fromDay: string;
+  toDay: string;
+}
+
+export interface Kpis {
+  visits: number;
+  visitors: number;
+  pageviews: number;
 }
 
 export interface BreakdownDbRow {
@@ -96,28 +104,22 @@ export interface Repo {
   cleanupSalts(beforeDay: string): Promise<number>;
   recordPageView(input: RecordPageViewInput): Promise<{ visitId: string; newVisit: boolean }>;
 
-  /* ---------- stats (Phase 3) ---------- */
-  statsKpis(q: StatsQuery): Promise<{ visits: number; visitors: number; pageviews: number }>;
+  /* ---------- stats (from the daily rollups, except "live") ---------- */
+  statsKpis(q: StatsQuery): Promise<Kpis>;
   statsSeries(
     q: StatsQuery,
     unit: string,
-    timezone: string,
   ): Promise<Array<{ bucket: string; channelId: string; visits: number }>>;
   statsBreakdown(q: StatsQuery, dimension: string, limit: number): Promise<BreakdownDbRow[]>;
-  statsLive(q: Omit<StatsQuery, 'start' | 'end'>, since: string): Promise<number>;
   statsSiteDaily(
     siteIds: string[],
-    start: string,
-    end: string,
-    timezone: string,
+    fromDay: string,
+    toDay: string,
   ): Promise<Array<{ siteId: string; day: string; visits: number }>>;
-  statsVisitsByPlatform(
-    siteIds: string[],
-    start: string,
-    end: string,
-    timezone: string,
-    unit: string,
-  ): Promise<Array<{ platformId: string; bucket: string; visits: number }>>;
+  /** Distinct visitors seen since an instant, from the raw visits. */
+  statsLive(q: StatsFilters, since: string): Promise<number>;
+  /** Recreates the rollups for these sites (after imports or a timezone change). */
+  rebuildDailyStats(siteIds: string[]): Promise<number>;
 
   /* ---------- social (Phase 4) ---------- */
   listSocialAccounts(workspaceId: string): Promise<SocialAccountRow[]>;
@@ -144,14 +146,47 @@ export interface Repo {
   purgeExpiredData(): Promise<{ visitsDeleted: number; pageViewsDeleted: number }>;
 }
 
-/** Arguments shared by the stats_* SQL functions. */
-export function statsArgs(q: Omit<StatsQuery, 'start' | 'end'>) {
+/** A KPI row from SQL (bigint may arrive as a string), or zeros when there is none. */
+export function toKpis(
+  row: { visits: unknown; visitors: unknown; pageviews: unknown } | undefined,
+): Kpis {
+  return {
+    visits: Number(row?.visits ?? 0),
+    visitors: Number(row?.visitors ?? 0),
+    pageviews: Number(row?.pageviews ?? 0),
+  };
+}
+
+/** A breakdown row from SQL in API shape. */
+export function toBreakdownRow(r: {
+  key: string;
+  label: string;
+  detail: string | null;
+  channel_id: string | null;
+  value: number;
+}): BreakdownDbRow {
+  return {
+    key: r.key,
+    label: r.label,
+    detail: r.detail,
+    channelId: r.channel_id,
+    value: Number(r.value),
+  };
+}
+
+/** Filter arguments shared by the stats_* SQL functions. */
+export function filterArgs(q: StatsFilters) {
   return {
     p_site_ids: q.siteIds,
     p_channels: q.channels,
     p_device: q.device,
     p_country: q.country,
   };
+}
+
+/** Arguments for stats_kpis, stats_series and stats_breakdown. */
+export function statsArgs(q: StatsQuery) {
+  return { ...filterArgs(q), p_from: q.fromDay, p_to: q.toDay };
 }
 
 /** Arguments for record_page_view. */

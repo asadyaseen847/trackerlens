@@ -27,6 +27,9 @@ const envSchema = z.object({
   TIKTOK_CLIENT_SECRET: z.string().optional(),
   X_CLIENT_ID: z.string().optional(),
   X_CLIENT_SECRET: z.string().optional(),
+
+  // Optional: Slack/Discord incoming webhook that receives server errors (utils/logger.ts).
+  ERROR_WEBHOOK_URL: z.url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

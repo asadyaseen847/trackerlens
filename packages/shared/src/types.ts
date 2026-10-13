@@ -50,6 +50,8 @@ export interface SeriesBucket {
 export interface BreakdownRow {
   key: string;
   label: string;
+  /** Extra context: the domain for pages, the platform for campaigns. */
+  detail?: string;
   channel?: Channel;
   value: number;
   /** 0–1 share of the total. */
@@ -130,6 +132,14 @@ export interface StatsFilters {
 export interface OverviewResponse {
   range: DateRange;
   compareRange: DateRange;
+  /** "Sep 15 – Oct 14, 2026" */
+  rangeLabel: string;
+  /** "Aug 16 – Sep 14" or "the same dates last year" */
+  compareLabel: string;
+  /** Bucket unit for titles: "Visits per day". */
+  unit: 'day' | 'week' | 'month' | 'year';
+  /** False when the selected sites have never received a visit. */
+  hasData: boolean;
   kpis: { visits: Kpi; visitors: Kpi; pageviews: Kpi };
   series: SeriesBucket[];
 }
@@ -158,10 +168,34 @@ export interface SocialAccountDto {
 
 export interface SocialAccountsResponse {
   accounts: SocialAccountDto[];
+  /** True when the mock provider is on: the UI labels everything "Sample data". */
+  sampleData: boolean;
+}
+
+export interface SocialPlatformSummary {
+  platform: SocialPlatform;
+  account: SocialAccountDto | null;
+  /** Followers at the end of the range (null if not connected or not reported). */
+  followers: number | null;
+  /** Followers gained in the range (can be negative). */
+  newFollowers: number;
+  views: number;
+  /** engagements / views, in percent. */
+  engagementRate: number | null;
+  /** Website visits whose platform is this network. */
+  visits: number;
+  visitsPer1000Views: number | null;
 }
 
 export interface SocialOverviewResponse {
+  rangeLabel: string;
+  compareLabel: string;
+  unit: 'day' | 'week' | 'month' | 'year';
+  sampleData: boolean;
   totals: { followers: Kpi; newFollowers: Kpi; views: Kpi; visits: Kpi };
+  /** One entry per platform, connected or not, in SOCIAL_PLATFORMS order. */
+  platforms: SocialPlatformSummary[];
+  /** Post views per bucket and connected platform. */
   series: Array<{
     start: string;
     label: string;
@@ -169,6 +203,7 @@ export interface SocialOverviewResponse {
     partial: boolean;
     byPlatform: Partial<Record<SocialPlatform, number>>;
   }>;
+  /** Connected platforms, best visits-per-1,000-views first. */
   viewsToVisits: Array<{
     platform: SocialPlatform;
     views: number;

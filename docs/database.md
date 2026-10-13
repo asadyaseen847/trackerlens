@@ -1,7 +1,10 @@
 # Database guide
 
-The database is **Supabase Postgres**. The whole schema is one file:
-[`supabase/migrations/20261013000000_initial_schema.sql`](../supabase/migrations/20261013000000_initial_schema.sql).
+The database is **Supabase Postgres**, defined by two files, run in order:
+
+1. [`20261013000000_initial_schema.sql`](../supabase/migrations/20261013000000_initial_schema.sql): tables, lookups, rules and security.
+2. [`20261014000000_tracking_and_stats.sql`](../supabase/migrations/20261014000000_tracking_and_stats.sql): the functions that record visits and compute the stats (see "Functions" below).
+
 Every table and column also has a description, which Supabase shows in the **Table Editor**: hover a column name, or open a table's definition.
 
 ## The picture
@@ -21,6 +24,10 @@ erDiagram
     platforms ||--o{ social_accounts : "network"
     social_accounts ||--o| social_account_tokens : "secrets"
     social_accounts ||--o{ social_daily_stats : "daily numbers"
+    sites ||--o{ daily_stats : "rollup"
+    sites ||--o{ daily_page_stats : "rollup"
+    sites ||--o{ daily_totals : "rollup"
+    sites ||--o{ daily_page_totals : "rollup"
 
     users {
         uuid id PK
@@ -95,6 +102,28 @@ erDiagram
         date day PK
         text value
     }
+    daily_stats {
+        uuid site_id PK,FK
+        date day PK
+        text channel_id PK,FK
+        text platform_id PK,FK
+        text source_detail PK
+        text utm_campaign PK
+        device device PK
+        char country_code PK
+        int visits
+        int visitors
+        int pageviews
+    }
+    daily_page_stats {
+        uuid site_id PK,FK
+        date day PK
+        text path PK
+        text channel_id PK,FK
+        device device PK
+        char country_code PK
+        int pageviews
+    }
 ```
 
 ## The tables in plain words
@@ -108,6 +137,10 @@ erDiagram
 | Tracking | `visits`                | one visit: pages seen with no gap over 30 minutes, and where it came from            |
 |          | `page_views`            | one page seen during a visit                                                         |
 |          | `salts`                 | the random value used for one day's visitor hashes (deleted after 2 days)            |
+| Rollups  | `daily_totals`          | visits, visitors and page views for one site, day, channel and device                |
+|          | `daily_stats`           | the same, split further by platform, campaign and country (see below)                |
+|          | `daily_page_totals`     | page views of one page on one site and day                                           |
+|          | `daily_page_stats`      | page views of one page, on one site and day, for one channel/device/country          |
 | Lookups  | `channels`              | a kind of source: Social media, Search, Email, AI assistants, Direct, Other websites |
 |          | `platforms`             | a known source (Instagram, Google, ChatGPT, …) and its channel                       |
 | Social   | `social_accounts`       | a connected Instagram/Facebook/… profile                                             |
@@ -167,10 +200,47 @@ group by 1
 order by 1;
 ```
 
-## Growing the data (Phase 6)
+## Functions
 
-- **Rollups:** when page views reach the millions, add daily summary tables, e.g. visits per site × day × channel × platform × device × country, filled by a cron job. Dashboards then read the summaries instead of raw rows. This is the standard next step for analytics and keeps the raw tables normalized.
-- **Retention:** the weekly cron deletes raw visits and page views older than `workspaces.retention_months`. The BRIN index on `page_views.viewed_at` makes those deletes cheap. Monthly partitions are the next step if deletes ever get slow.
+The API calls these with supabase-js `rpc()`. Each is one database round trip, which matters on serverless. Only the service role can execute them.
+
+| Function                                 | What it does                                                                                                                                                                                                                                                                                       |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `record_page_view(...)`                  | One tracker hit. Under a per-visitor lock, it extends the visitor's visit if they were active in the last 30 minutes, otherwise starts a new visit with the given source. It adds the page view, updates the four rollups and updates the site's first/last event (at most once a minute). Atomic. |
+| `get_or_create_salt(day, candidate)`     | Returns the day's salt; the first caller's candidate wins.                                                                                                                                                                                                                                         |
+| `cleanup_salts(before)`                  | Deletes old salts (daily cron).                                                                                                                                                                                                                                                                    |
+| `rebuild_daily_stats(site_ids)`          | Recreates the four rollups from the raw tables. Run after a bulk import (the seed scripts do) and when a workspace changes its timezone (the API does).                                                                                                                                            |
+| `stats_kpis(...)`                        | Visits, visitors and page views between two days.                                                                                                                                                                                                                                                  |
+| `stats_series(..., unit)`                | Visits per bucket (day, week starting Monday, month, year) and channel.                                                                                                                                                                                                                            |
+| `stats_breakdown(dimension, limit, ...)` | Top platforms, pages, campaigns, countries or devices.                                                                                                                                                                                                                                             |
+| `stats_site_daily(...)`                  | Visits per site per day (site cards and sparklines).                                                                                                                                                                                                                                               |
+| `stats_live(...)`                        | Distinct visitors in the last 5 minutes (reads `visits`).                                                                                                                                                                                                                                          |
+| `purge_expired_data()`                   | Deletes visits, page views and rollup rows older than each workspace's `retention_months` (weekly cron).                                                                                                                                                                                           |
+
+`stats_kpis`, `stats_series`, `stats_breakdown` and `stats_site_daily` read the rollups. They take site ids (already checked against the workspace by the API), a range of local days (inclusive), channels, device and country.
+
+## Rollups (Phase 6)
+
+The dashboard never scans raw visits or page views (except "on the site right now"). It reads summary tables that `record_page_view` updates with every hit. Each query reads the smallest one that can answer it:
+
+| Table               | One row per                                                                         | Read by                                                              |
+| ------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `daily_totals`      | site, day, channel, device                                                          | KPIs, chart, device list and site cards (no country filter)          |
+| `daily_stats`       | site, day and _kind of visit_: channel, platform, source, campaign, device, country | anything with a country filter; country, platform and campaign lists |
+| `daily_page_totals` | site, day, page                                                                     | the Pages list without filters                                       |
+| `daily_page_stats`  | site, day, page, and the visit's channel, device and country                        | the Pages list with filters                                          |
+
+The `*_totals` tables are the detailed tables summed up, kept separately because most views have no country filter.
+
+How the numbers are defined:
+
+- **Days** are calendar days in the workspace timezone. Changing the timezone rebuilds the rollups.
+- **Visitors:** the visitor hash changes every day, so a visitor is counted once per day. They are counted in the kind of visit of their first visit that day. With a filter, visitors means people whose first visit of the day matches it.
+- **Page views** count on the day they happen, under the visit they belong to.
+
+These tables are derived data, not a second source of truth: `rebuild_daily_stats` recreates them exactly from `visits` and `page_views`, and a test checks that. On 1M page views (`npm run bench`) every dashboard query answers in under 500 ms, even on the in-memory test database.
+
+**Retention:** the weekly cron deletes raw visits, page views and rollup rows older than `workspaces.retention_months`. The BRIN index on `page_views.viewed_at` makes those deletes cheap. Monthly partitions are the next step if deletes ever get slow.
 
 ## Changing the schema
 

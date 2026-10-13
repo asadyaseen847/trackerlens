@@ -33,6 +33,24 @@ export interface SocialProvider {
   fetchDailyStats(tokens: TokenSet, fromDay: string, toDay: string): Promise<DailyStat[]>;
 }
 
+/** Settings providers need to build OAuth URLs. */
+export interface ProviderConfig {
+  /** Public URL of the dashboard; OAuth callbacks go to <appUrl>/api/social/callback/<platform>. */
+  appUrl: string;
+}
+
+/** The platform refused our token: the account must be reconnected (§13). */
+export class ProviderAuthError extends Error {
+  constructor(message = 'The platform refused the access token') {
+    super(message);
+    this.name = 'ProviderAuthError';
+  }
+}
+
+export function callbackUrl(config: ProviderConfig, platform: SocialPlatform): string {
+  return `${config.appUrl.replace(/\/+$/, '')}/api/social/callback/${platform}`;
+}
+
 /** Placeholder provider whose every method throws 501 until its phase is built. */
 export function notImplementedProvider(id: SocialPlatform, phase: number): SocialProvider {
   const fail = (): never => {

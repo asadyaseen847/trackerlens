@@ -34,12 +34,14 @@ describe('GET /', () => {
   });
 });
 
-describe('placeholder routes', () => {
-  it('answer 501 with the phase that builds them', async () => {
-    const res = await request(createApp()).get('/api/stats/overview');
-    expect(res.status).toBe(501);
-    expect(res.body).toEqual({ error: 'Not implemented', phase: 3 });
-  });
+describe('routing', () => {
+  it.each(['/api/stats/overview', '/api/sites', '/api/workspace', '/api/social/accounts'])(
+    '%s needs a session',
+    async (path) => {
+      const res = await request(createApp()).get(path);
+      expect(res.status).toBe(401);
+    },
+  );
 
   it('unknown routes answer JSON 404', async () => {
     const res = await request(createApp()).get('/api/nope');
