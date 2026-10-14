@@ -128,3 +128,27 @@ describe('connecting a social account (mock)', () => {
     expect(res.body).toMatchObject({ ok: true, upToDate: 1, failed: 0 });
   });
 });
+
+describe('which platforms can be connected', () => {
+  it('offers every platform with sample data, and none before real providers exist', async () => {
+    const mock = await testApp({ socialMock: true });
+    const { agent: a } = await signedInAgent(mock.app);
+    expect((await a.get('/api/social/accounts')).body.available).toHaveLength(6);
+
+    const real = await testApp({ socialMock: false });
+    const { agent: b } = await signedInAgent(real.app);
+    expect((await b.get('/api/social/accounts')).body).toMatchObject({
+      sampleData: false,
+      available: [],
+    });
+    expect((await b.get('/api/social/overview')).body.available).toEqual([]);
+  });
+
+  it('saves nothing when the tokens cannot be encrypted', async () => {
+    const { app, db } = await testApp({ socialMock: true, encryptionKey: 'not-32-bytes' });
+    const { agent } = await signedInAgent(app);
+    const back = await connect(agent, 'linkedin');
+    expect(back).toContain('error=linkedin');
+    expect((await db.query('select 1 from social_accounts')).rows).toHaveLength(0);
+  });
+});

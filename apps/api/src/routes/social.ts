@@ -9,6 +9,7 @@ import {
   parsePlatform,
   toSocialAccountDto,
 } from '../services/social.service.js';
+import { availablePlatforms } from '../social/registry.js';
 import { HttpError } from '../utils/httpError.js';
 import { logger } from '../utils/logger.js';
 
@@ -23,6 +24,7 @@ export function socialRouter(deps: AppDeps): Router {
     const body: SocialAccountsResponse = {
       accounts: accounts.map(toSocialAccountDto),
       sampleData: deps.socialMock,
+      available: availablePlatforms({ useMock: deps.socialMock, appUrl: deps.appUrl }),
     };
     res.json(body);
   });

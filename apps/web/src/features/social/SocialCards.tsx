@@ -28,13 +28,16 @@ const META = new Map(SOCIAL_PLATFORMS.map((p) => [p.id, p]));
 
 export interface SocialCardsProps {
   platforms: ReadonlyArray<SocialPlatformSummary>;
+  /** Platforms that can be connected now; the others say "Coming soon". */
+  available: ReadonlyArray<SocialPlatform>;
 }
 
 /**
  * One card per platform (§11): connected cards show followers, the change, views, engagement
- * and site visits; unconnected ones say what we can read and offer Connect.
+ * and site visits; unconnected ones say what we can read and offer Connect, or say "Coming
+ * soon" while that platform's real connection isn't built yet.
  */
-export function SocialCards({ platforms }: SocialCardsProps) {
+export function SocialCards({ platforms, available }: SocialCardsProps) {
   const toast = useToast();
   const disconnect = useDisconnect();
   const [confirming, setConfirming] = useState<SocialPlatformSummary | null>(null);
@@ -49,6 +52,7 @@ export function SocialCards({ platforms }: SocialCardsProps) {
         );
 
         if (!p.account) {
+          const canConnect = available.includes(p.platform);
           return (
             <div key={p.platform} className={`${styles.soc} ${styles.off}`}>
               <div className={styles.top}>
@@ -56,13 +60,19 @@ export function SocialCards({ platforms }: SocialCardsProps) {
                   {swatch}
                   {name}
                 </span>
-                <StatusChip status="waiting" label="Not connected" />
+                <StatusChip status="waiting" label={canConnect ? 'Not connected' : 'Coming soon'} />
               </div>
               <p className={styles.what}>{WHAT_WE_READ[p.platform]}</p>
               <div>
-                <Button variant="dark" onClick={() => startConnect(p.platform)}>
-                  Connect {name}
-                </Button>
+                {canConnect ? (
+                  <Button variant="dark" onClick={() => startConnect(p.platform)}>
+                    Connect {name}
+                  </Button>
+                ) : (
+                  <Button disabled title={`Connecting ${name} is coming soon`}>
+                    Coming soon
+                  </Button>
+                )}
               </div>
             </div>
           );

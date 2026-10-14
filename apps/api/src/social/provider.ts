@@ -26,6 +26,8 @@ export interface DailyStat {
 
 export interface SocialProvider {
   id: SocialPlatform;
+  /** False for placeholders: the UI shows "Coming soon" instead of a Connect button. */
+  available: boolean;
   getAuthUrl(state: string): string;
   exchangeCode(code: string): Promise<TokenSet>;
   refresh?(tokens: TokenSet): Promise<TokenSet>;
@@ -58,6 +60,7 @@ export function notImplementedProvider(id: SocialPlatform, phase: number): Socia
   };
   return {
     id,
+    available: false,
     getAuthUrl: fail,
     exchangeCode: async () => fail(),
     fetchProfile: async () => fail(),

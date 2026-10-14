@@ -15,7 +15,7 @@ import type { AppDeps } from '../createApp.js';
 import type { SocialAccountRow, SocialDailyStatRow } from '../db/repo.js';
 import type { AuthContext } from '../middleware/requireAuth.js';
 import { encryptToken } from '../social/crypto.js';
-import { getProvider } from '../social/registry.js';
+import { availablePlatforms, getProvider } from '../social/registry.js';
 import { syncAccount } from '../social/sync.js';
 import { HttpError } from '../utils/httpError.js';
 import { jwtSecret } from './auth.service.js';
@@ -94,6 +94,11 @@ export async function completeConnection(
   const provider = getProvider(platform, { useMock: deps.socialMock, appUrl: deps.appUrl });
   const tokens = await provider.exchangeCode(code);
   const profile = await provider.fetchProfile(tokens);
+  // Encrypt first: a missing or bad ENCRYPTION_KEY fails here, before anything is saved.
+  const accessTokenEnc = encryptToken(tokens.accessToken, deps.encryptionKey);
+  const refreshTokenEnc = tokens.refreshToken
+    ? encryptToken(tokens.refreshToken, deps.encryptionKey)
+    : null;
 
   const account = await deps.repo.upsertSocialAccount({
     workspace_id: auth.workspaceId,
@@ -104,15 +109,19 @@ export async function completeConnection(
     avatar_url: profile.avatarUrl ?? null,
     status: 'connected',
   });
-  await deps.repo.saveSocialTokens({
-    social_account_id: account.id,
-    access_token_enc: encryptToken(tokens.accessToken, deps.encryptionKey),
-    refresh_token_enc: tokens.refreshToken
-      ? encryptToken(tokens.refreshToken, deps.encryptionKey)
-      : null,
-    expires_at: tokens.expiresAt?.toISOString() ?? null,
-    scopes: tokens.scopes ?? [],
-  });
+  try {
+    await deps.repo.saveSocialTokens({
+      social_account_id: account.id,
+      access_token_enc: accessTokenEnc,
+      refresh_token_enc: refreshTokenEnc,
+      expires_at: tokens.expiresAt?.toISOString() ?? null,
+      scopes: tokens.scopes ?? [],
+    });
+  } catch (err) {
+    // Never leave an account that says "Connected" without a token behind it.
+    await deps.repo.updateSocialAccount(account.id, { status: 'needs_reconnect' });
+    throw err;
+  }
   await syncAccount(deps, account);
   return account;
 }
@@ -275,6 +284,7 @@ export async function getSocialOverview(
     compareLabel: plan.compareLabel,
     unit: plan.unit,
     sampleData: deps.socialMock,
+    available: availablePlatforms({ useMock: deps.socialMock, appUrl: deps.appUrl }),
     totals: {
       followers: kpi(totals.followers[0]!, totals.followers[1]!),
       newFollowers: kpi(totals.newFollowers[0]!, totals.newFollowers[1]!),

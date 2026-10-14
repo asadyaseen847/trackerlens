@@ -170,6 +170,8 @@ export interface SocialAccountsResponse {
   accounts: SocialAccountDto[];
   /** True when the mock provider is on: the UI labels everything "Sample data". */
   sampleData: boolean;
+  /** Platforms that can be connected now; the others show "Coming soon". */
+  available: SocialPlatform[];
 }
 
 export interface SocialPlatformSummary {
@@ -192,6 +194,8 @@ export interface SocialOverviewResponse {
   compareLabel: string;
   unit: 'day' | 'week' | 'month' | 'year';
   sampleData: boolean;
+  /** Platforms that can be connected now; the others show "Coming soon". */
+  available: SocialPlatform[];
   totals: { followers: Kpi; newFollowers: Kpi; views: Kpi; visits: Kpi };
   /** One entry per platform, connected or not, in SOCIAL_PLATFORMS order. */
   platforms: SocialPlatformSummary[];

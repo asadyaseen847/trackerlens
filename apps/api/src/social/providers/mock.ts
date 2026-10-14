@@ -63,6 +63,7 @@ function* daysBetween(fromDay: string, toDay: string) {
 export function mockProvider(platform: SocialPlatform, config: ProviderConfig): SocialProvider {
   return {
     id: platform,
+    available: true,
     getAuthUrl(state) {
       // No real login screen: go straight to our callback, like a successful OAuth consent.
       // Relative, so it works on any domain before APP_URL is configured.

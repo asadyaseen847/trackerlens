@@ -148,7 +148,11 @@ export function SocialPage() {
         )}
       </section>
 
-      {data ? <SocialCards platforms={data.platforms} /> : <Skeleton height={260} radius={20} />}
+      {data ? (
+        <SocialCards platforms={data.platforms} available={data.available} />
+      ) : (
+        <Skeleton height={260} radius={20} />
+      )}
 
       <Panel
         title={`Post views per ${data?.unit ?? 'day'}`}
