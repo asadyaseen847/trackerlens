@@ -39,10 +39,16 @@ export function SocialPage() {
     const failed = params.get('error');
     if (!connected && !failed) return;
     const label = META.get((connected ?? failed) as never)?.label ?? 'The account';
-    toast(connected ? `${label} connected` : `${label} couldn’t be connected. Please try again.`);
+    const reason = params.get('reason')?.slice(0, 200);
+    toast(
+      connected
+        ? `${label} connected`
+        : (reason ?? `${label} couldn’t be connected. Please try again.`),
+    );
     const next = new URLSearchParams(params);
     next.delete('connected');
     next.delete('error');
+    next.delete('reason');
     setParams(next, { replace: true });
   }, [params, setParams, toast]);
 

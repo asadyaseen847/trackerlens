@@ -23,6 +23,13 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   LINKEDIN_CLIENT_ID: z.string().optional(),
   LINKEDIN_CLIENT_SECRET: z.string().optional(),
+  /** LinkedIn Marketing API version (YYYYMM); each version is supported for about a year. */
+  LINKEDIN_API_VERSION: z
+    .string()
+    .regex(/^\d{6}$/)
+    .default('202609'),
+  /** Space-separated OAuth scopes; the app must be approved for them. */
+  LINKEDIN_SCOPES: z.string().default('r_organization_admin rw_organization_admin'),
   TIKTOK_CLIENT_KEY: z.string().optional(),
   TIKTOK_CLIENT_SECRET: z.string().optional(),
   X_CLIENT_ID: z.string().optional(),
@@ -72,4 +79,15 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
 
   if (source === process.env) cached = env;
   return env;
+}
+
+/** LinkedIn app settings, or undefined while LINKEDIN_CLIENT_ID / _SECRET are not set. */
+export function linkedinFromEnv(env: Env) {
+  if (!env.LINKEDIN_CLIENT_ID || !env.LINKEDIN_CLIENT_SECRET) return undefined;
+  return {
+    clientId: env.LINKEDIN_CLIENT_ID,
+    clientSecret: env.LINKEDIN_CLIENT_SECRET,
+    apiVersion: env.LINKEDIN_API_VERSION,
+    scopes: env.LINKEDIN_SCOPES.split(/[\s,]+/).filter(Boolean),
+  };
 }

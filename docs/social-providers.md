@@ -94,11 +94,57 @@ Sources are developers.facebook.com pages (linked). Anything marked _unconfirmed
 
 ---
 
-## YouTube, LinkedIn, TikTok, X
+## LinkedIn (built)
 
-Not researched yet; we do them one at a time after Meta, per §13. Known up front:
+Status: **code done and tested** (`apps/api/src/social/providers/linkedin.ts`, `apps/api/test/linkedin.test.ts`). It goes live once the app credentials below are set. Researched from LinkedIn's Marketing API docs, version 202609 (October 2026).
+
+**What it reads, for one company page the person administers:**
+
+| Our field   | LinkedIn source                                                                                         |
+| ----------- | ------------------------------------------------------------------------------------------------------- |
+| followers   | today's total (`/rest/networkSizes/{org}?edgeType=COMPANY_FOLLOWED_BY_MEMBER`), minus later daily gains |
+| (gains)     | `/rest/organizationalEntityFollowerStatistics`, DAY intervals: organic + paid follower gains            |
+| views       | `/rest/organizationalEntityShareStatistics`, DAY intervals: `impressionCount` (organic posts)           |
+| engagements | likes + comments + shares + clicks from the same rows                                                   |
+| link_clicks | `clickCount`                                                                                            |
+
+**Login:** "Sign in with LinkedIn" (OAuth 2.0, 3-legged). Scopes `r_organization_admin rw_organization_admin`. After login, `/rest/organizationAcls?q=roleAssignee&role=ADMINISTRATOR&state=APPROVED` finds the first page the person administers. If there is none, the person is told to ask a page admin.
+
+**Tokens:** access tokens last 60 days. Apps approved for the Community Management API also get a refresh token (1 year). The daily sync renews the access token a day before it expires; without a refresh token the card asks to reconnect.
+
+**Limits:**
+
+- 12 months of daily history; the first sync loads 90 days.
+- Follower gains arrive about 2 days late, so every sync re-reads the last 3 days.
+- Posts' numbers are organic only; ads are not included.
+- One page per connection: the first one the person administers.
+
+### What you (the owner) need to do for LinkedIn
+
+1. Have a **LinkedIn company page** that you are an **admin** of.
+2. Go to https://www.linkedin.com/developers/apps → **Create app**.
+   - Use your company page as the app's page.
+   - Add a logo and the privacy policy URL `https://trackerlens-web.vercel.app/privacy`.
+   - The page admin verifies the app (Settings tab → **Verify**).
+3. **Products** tab → request **Community Management API**. LinkedIn reviews it; this can take days to weeks. Until it is approved, the login screen says the scopes are not allowed.
+4. **Auth** tab:
+   - add the redirect URL `https://trackerlens-web.vercel.app/api/social/callback/linkedin`;
+   - copy the **Client ID** and **Primary Client Secret**.
+5. In Vercel → `trackerlens-api` → Settings → Environment Variables, set:
+   - `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET`;
+   - `SOCIAL_MOCK=false`;
+   - `ENCRYPTION_KEY`, generated once (see `apps/api/.env.example`).
+
+   Then redeploy.
+
+6. Open TrackerLens → Social → **Connect LinkedIn**, sign in, and allow. The card shows your page's name and the last 90 days.
+
+**Keep in mind:** LinkedIn retires each API version after about a year. When the deprecation notice for 202609 appears, set `LINKEDIN_API_VERSION` to a newer `YYYYMM` (no code change needed if the fields stay the same).
+
+## YouTube, TikTok, X
+
+Not researched yet; we do them one at a time, per §13. Known up front:
 
 - **YouTube:** Google Cloud project, OAuth consent screen, YouTube Analytics API. Google's verification is needed for public use.
-- **LinkedIn:** company page analytics need the Community Management API, which LinkedIn must approve for your app.
 - **TikTok:** TikTok for Developers app with the Display API / Research access; business accounts only.
 - **X:** API access is paid. **Confirm the plan and cost before we build it**, as §13 requires.

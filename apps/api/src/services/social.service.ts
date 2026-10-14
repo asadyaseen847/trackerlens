@@ -15,7 +15,7 @@ import type { AppDeps } from '../createApp.js';
 import type { SocialAccountRow, SocialDailyStatRow } from '../db/repo.js';
 import type { AuthContext } from '../middleware/requireAuth.js';
 import { encryptToken } from '../social/crypto.js';
-import { availablePlatforms, getProvider } from '../social/registry.js';
+import { availablePlatforms, getProvider, providerOptions } from '../social/registry.js';
 import { syncAccount } from '../social/sync.js';
 import { HttpError } from '../utils/httpError.js';
 import { jwtSecret } from './auth.service.js';
@@ -76,7 +76,7 @@ function verifyState(token: string, expected: StatePayload): void {
 /** Where to send the browser to connect a platform (its OAuth screen, or straight back for the mock). */
 export function connectUrl(deps: AppDeps, auth: AuthContext, platform: SocialPlatform): string {
   const state = signState({ workspaceId: auth.workspaceId, userId: auth.userId, platform });
-  return getProvider(platform, { useMock: deps.socialMock, appUrl: deps.appUrl }).getAuthUrl(state);
+  return getProvider(platform, providerOptions(deps)).getAuthUrl(state);
 }
 
 /**
@@ -91,7 +91,7 @@ export async function completeConnection(
   state: string,
 ): Promise<SocialAccountRow> {
   verifyState(state, { workspaceId: auth.workspaceId, userId: auth.userId, platform });
-  const provider = getProvider(platform, { useMock: deps.socialMock, appUrl: deps.appUrl });
+  const provider = getProvider(platform, providerOptions(deps));
   const tokens = await provider.exchangeCode(code);
   const profile = await provider.fetchProfile(tokens);
   // Encrypt first: a missing or bad ENCRYPTION_KEY fails here, before anything is saved.
@@ -284,7 +284,7 @@ export async function getSocialOverview(
     compareLabel: plan.compareLabel,
     unit: plan.unit,
     sampleData: deps.socialMock,
-    available: availablePlatforms({ useMock: deps.socialMock, appUrl: deps.appUrl }),
+    available: availablePlatforms(providerOptions(deps)),
     totals: {
       followers: kpi(totals.followers[0]!, totals.followers[1]!),
       newFollowers: kpi(totals.newFollowers[0]!, totals.newFollowers[1]!),

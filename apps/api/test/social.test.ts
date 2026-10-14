@@ -83,7 +83,10 @@ describe('connecting a social account (mock)', () => {
     const { app } = await testApp({ socialMock: true });
     const { agent } = await signedInAgent(app);
     const res = await agent.get('/api/social/callback/instagram?code=mock-instagram&state=forged');
-    expect(res.headers['location']).toBe('/app/social?error=instagram');
+    const back = new URL(res.headers['location'] as string, 'http://x');
+    expect(back.pathname).toBe('/app/social');
+    expect(back.searchParams.get('error')).toBe('instagram');
+    expect(back.searchParams.get('reason')).toMatch(/expired or was not started by you/);
 
     // A state started for Facebook can't connect Instagram.
     const start = await agent.get('/api/social/connect/facebook');
@@ -93,7 +96,9 @@ describe('connecting a social account (mock)', () => {
     const swapped = await agent.get(
       `/api/social/callback/instagram?code=mock-instagram&state=${state}`,
     );
-    expect(swapped.headers['location']).toBe('/app/social?error=instagram');
+    expect(
+      new URL(swapped.headers['location'] as string, 'http://x').searchParams.get('error'),
+    ).toBe('instagram');
     expect((await agent.get('/api/social/accounts')).body.accounts).toEqual([]);
   });
 

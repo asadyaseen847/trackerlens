@@ -32,13 +32,27 @@ export interface SocialProvider {
   exchangeCode(code: string): Promise<TokenSet>;
   refresh?(tokens: TokenSet): Promise<TokenSet>;
   fetchProfile(tokens: TokenSet): Promise<SocialProfile>;
-  fetchDailyStats(tokens: TokenSet, fromDay: string, toDay: string): Promise<DailyStat[]>;
+  /** Days are UTC dates, inclusive. `account` is the connected profile (its platform id). */
+  fetchDailyStats(
+    tokens: TokenSet,
+    fromDay: string,
+    toDay: string,
+    account: { externalId: string },
+  ): Promise<DailyStat[]>;
 }
 
-/** Settings providers need to build OAuth URLs. */
+/** OAuth app credentials for one platform (from the API's environment variables). */
+export interface OAuthAppConfig {
+  clientId: string;
+  clientSecret: string;
+}
+
+/** Settings providers need: where OAuth callbacks go, and each platform's app credentials. */
 export interface ProviderConfig {
   /** Public URL of the dashboard; OAuth callbacks go to <appUrl>/api/social/callback/<platform>. */
   appUrl: string;
+  /** LinkedIn app; LinkedIn shows "Coming soon" while unset. */
+  linkedin?: OAuthAppConfig & { apiVersion: string; scopes: string[] };
 }
 
 /** The platform refused our token: the account must be reconnected (§13). */

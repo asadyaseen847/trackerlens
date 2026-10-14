@@ -9,7 +9,7 @@ import {
   parsePlatform,
   toSocialAccountDto,
 } from '../services/social.service.js';
-import { availablePlatforms } from '../social/registry.js';
+import { availablePlatforms, providerOptions } from '../social/registry.js';
 import { HttpError } from '../utils/httpError.js';
 import { logger } from '../utils/logger.js';
 
@@ -24,7 +24,7 @@ export function socialRouter(deps: AppDeps): Router {
     const body: SocialAccountsResponse = {
       accounts: accounts.map(toSocialAccountDto),
       sampleData: deps.socialMock,
-      available: availablePlatforms({ useMock: deps.socialMock, appUrl: deps.appUrl }),
+      available: availablePlatforms(providerOptions(deps)),
     };
     res.json(body);
   });
@@ -51,6 +51,9 @@ export function socialRouter(deps: AppDeps): Router {
         error: err instanceof Error ? err.message : String(err),
       });
       back.searchParams.set('error', platform);
+      // Our own 4xx messages are written for people; anything else stays generic.
+      if (err instanceof HttpError && err.status < 500)
+        back.searchParams.set('reason', err.message);
     }
     res.redirect(302, back.pathname + back.search);
   });

@@ -2,15 +2,17 @@ import type { SocialPlatform } from '@audience/shared';
 import type { AppDeps } from '../createApp.js';
 import type { SocialAccountRow } from '../db/repo.js';
 import { logger } from '../utils/logger.js';
-import { decryptToken } from './crypto.js';
-import { ProviderAuthError } from './provider.js';
-import { getProvider } from './registry.js';
+import { decryptToken, encryptToken } from './crypto.js';
+import { ProviderAuthError, type TokenSet } from './provider.js';
+import { getProvider, providerOptions } from './registry.js';
 
 const DAY_MS = 86_400_000;
 const utcDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
 /** How far back the first sync goes: platforms keep limited history; the mock has 18 months. */
 const BACKFILL_DAYS = { mock: 548, real: 90 };
+/** Days before the last sync that each sync reads again (late numbers). */
+const REREAD_DAYS = 3;
 
 export type SyncOutcome = 'synced' | 'up_to_date' | 'needs_reconnect' | 'failed';
 
@@ -24,28 +26,43 @@ export async function syncAccount(
   now: Date = new Date(),
 ): Promise<SyncOutcome> {
   const yesterday = utcDay(now.getTime() - DAY_MS);
+  // Platforms finish a day's numbers late (LinkedIn: ~2 days), so re-read the last few days.
   const from = account.last_synced_at
-    ? utcDay(Date.parse(account.last_synced_at))
+    ? utcDay(Date.parse(account.last_synced_at) - (deps.socialMock ? 0 : REREAD_DAYS * DAY_MS))
     : utcDay(now.getTime() - (deps.socialMock ? BACKFILL_DAYS.mock : BACKFILL_DAYS.real) * DAY_MS);
   if (from > yesterday) return 'up_to_date';
 
   try {
     const stored = await deps.repo.getSocialTokens(account.id);
     if (!stored) throw new ProviderAuthError('No tokens stored');
-    const provider = getProvider(account.platform_id as SocialPlatform, {
-      useMock: deps.socialMock,
-      appUrl: deps.appUrl,
+    const provider = getProvider(account.platform_id as SocialPlatform, providerOptions(deps));
+    let tokens: TokenSet = {
+      accessToken: decryptToken(stored.access_token_enc, deps.encryptionKey),
+      ...(stored.refresh_token_enc
+        ? { refreshToken: decryptToken(stored.refresh_token_enc, deps.encryptionKey) }
+        : {}),
+    };
+    // Renew an access token that expires within a day, when the platform allows it.
+    const expiresAt = stored.expires_at ? Date.parse(stored.expires_at) : null;
+    if (expiresAt !== null && expiresAt < now.getTime() + DAY_MS) {
+      if (!provider.refresh || !tokens.refreshToken) {
+        if (expiresAt <= now.getTime()) throw new ProviderAuthError('Access token expired');
+      } else {
+        tokens = await provider.refresh(tokens);
+        await deps.repo.saveSocialTokens({
+          social_account_id: account.id,
+          access_token_enc: encryptToken(tokens.accessToken, deps.encryptionKey),
+          refresh_token_enc: tokens.refreshToken
+            ? encryptToken(tokens.refreshToken, deps.encryptionKey)
+            : stored.refresh_token_enc,
+          expires_at: tokens.expiresAt?.toISOString() ?? null,
+          scopes: tokens.scopes ?? stored.scopes,
+        });
+      }
+    }
+    const stats = await provider.fetchDailyStats(tokens, from, yesterday, {
+      externalId: account.external_id,
     });
-    const stats = await provider.fetchDailyStats(
-      {
-        accessToken: decryptToken(stored.access_token_enc, deps.encryptionKey),
-        ...(stored.refresh_token_enc
-          ? { refreshToken: decryptToken(stored.refresh_token_enc, deps.encryptionKey) }
-          : {}),
-      },
-      from,
-      yesterday,
-    );
     await deps.repo.upsertSocialDailyStats(
       stats.map((s) => ({
         social_account_id: account.id,

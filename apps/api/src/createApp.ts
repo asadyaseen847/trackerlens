@@ -1,8 +1,9 @@
 import cookieParser from 'cookie-parser';
 import express, { type RequestHandler } from 'express';
 import helmetImport from 'helmet';
-import { loadEnv } from './config/env.js';
+import { linkedinFromEnv, loadEnv } from './config/env.js';
 import type { Repo } from './db/repo.js';
+import type { ProviderConfig } from './social/provider.js';
 import { supabaseRepo } from './db/supabaseRepo.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import type { RateLimitOptions } from './middleware/rateLimit.js';
@@ -31,6 +32,8 @@ export interface AppDeps {
   encryptionKey: string | undefined;
   /** Public URL of the dashboard, for OAuth redirects. */
   appUrl: string;
+  /** LinkedIn app (LINKEDIN_CLIENT_ID / _SECRET). Unset: LinkedIn shows "Coming soon". */
+  linkedin?: ProviderConfig['linkedin'];
 }
 
 /**
@@ -49,6 +52,8 @@ export function createApp(overrides: Partial<AppDeps> = {}) {
     encryptionKey: 'encryptionKey' in overrides ? overrides.encryptionKey : env.ENCRYPTION_KEY,
     appUrl: overrides.appUrl ?? env.APP_URL,
   };
+  const linkedin = 'linkedin' in overrides ? overrides.linkedin : linkedinFromEnv(env);
+  if (linkedin) deps.linkedin = linkedin;
 
   const app = express();
 
