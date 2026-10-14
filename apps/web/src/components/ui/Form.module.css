@@ -34,6 +34,13 @@
   padding-right: 52px;
 }
 
+/* The body font draws tiny password dots; Verdana's are larger and easier to count. */
+.input[type='password'] {
+  font-family: Verdana, system-ui, sans-serif;
+  font-size: 20px;
+  letter-spacing: 0.12em;
+}
+
 .toggle {
   position: absolute;
   top: 50%;
