@@ -25,6 +25,41 @@
   width: 100%;
 }
 
+/* Password fields: the eye button sits inside the input's right edge. */
+.passwordWrap {
+  position: relative;
+}
+
+.input.withToggle {
+  padding-right: 52px;
+}
+
+.toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.toggle:hover {
+  color: var(--ink);
+  background: var(--track);
+}
+
+.toggle:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+
 .input[aria-invalid='true'] {
   border-color: var(--t-social);
 }
