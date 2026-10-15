@@ -8,6 +8,11 @@ export interface ClassifyInput {
   referrer: string | null;
   /** The site's normalized domain, e.g. "shop.example.com". */
   siteDomain: string;
+  /**
+   * The browser's user agent, used only to recognise a social app's built-in browser when the
+   * app sent no referrer. Never stored.
+   */
+  userAgent?: string | null;
 }
 
 export interface ClassifyResult {
@@ -90,6 +95,31 @@ const HOST_RULES: ReadonlyArray<[platform: string, matches: (host: string) => bo
   ['outlook', domainRule('outlook.live.com', 'outlook.office.com', 'outlook.office365.com')],
 ];
 
+/**
+ * Social apps' built-in browsers name themselves in the user agent. Many of them (TikTok,
+ * Snapchat, sometimes Facebook and Instagram) send no referrer, so this is the only clue left.
+ * Threads ("Barcelona") and Instagram come before Facebook: their user agents can include FB tags.
+ */
+const IN_APP_RULES: ReadonlyArray<[platform: string, pattern: RegExp]> = [
+  ['threads', /\bBarcelona\b/],
+  ['instagram', /\bInstagram\b/],
+  ['facebook', /\bFBAN\/|\bFBAV\/|\bFB_IAB\/|\bFBIOS\b|\[FB[A-Z_]*;/],
+  ['linkedin', /\bLinkedInApp\b/],
+  ['tiktok', /\bmusical_ly\b|\bBytedanceWebview\b|\bTikTok\b|\btrill_/],
+  ['snapchat', /\bSnapchat\b/],
+  ['pinterest', /\bPinterest\b/],
+  ['x', /\bTwitter(?:Android)?\b/],
+];
+
+/** The social app whose built-in browser this is, or null. */
+export function inAppBrowserPlatform(userAgent: string | null | undefined): string | null {
+  if (!userAgent) return null;
+  for (const [platform, pattern] of IN_APP_RULES) {
+    if (pattern.test(userAgent)) return platform;
+  }
+  return null;
+}
+
 /** Lowercase host without "www." or "m.", or null if the value isn't a URL. */
 export function referrerHostOf(url: string | null): string | null {
   if (!url) return null;
@@ -122,9 +152,14 @@ function readUtm(pageUrl: string): Utm {
 
 /**
  * Work out where a visit came from, applying §8 in order:
- * UTM tags → referrer host → direct.
+ * UTM tags → referrer host → social app's built-in browser → direct.
  */
-export function classify({ pageUrl, referrer, siteDomain }: ClassifyInput): ClassifyResult {
+export function classify({
+  pageUrl,
+  referrer,
+  siteDomain,
+  userAgent,
+}: ClassifyInput): ClassifyResult {
   const utm = readUtm(pageUrl);
   const medium = utm.medium?.toLowerCase();
   const isPaid = medium !== undefined && PAID_MEDIUMS.has(medium);
@@ -161,6 +196,17 @@ export function classify({ pageUrl, referrer, siteDomain }: ClassifyInput): Clas
     return { ...base, channel: 'other', platform: 'other', sourceDetail: referrerHost };
   }
 
-  // 3. No tags and no referrer: typed in, bookmarked, or an app that hides the referrer.
+  // 3. No tags and no referrer, but the page opened inside a social app's own browser.
+  const inApp = inAppBrowserPlatform(userAgent);
+  if (inApp) {
+    return {
+      ...base,
+      channel: CHANNEL_OF.get(inApp) ?? 'social',
+      platform: inApp,
+      sourceDetail: null,
+    };
+  }
+
+  // 4. Nothing to go on: typed in, bookmarked, or an app that hides where it came from.
   return { ...base, channel: 'direct', platform: 'direct', sourceDetail: null };
 }

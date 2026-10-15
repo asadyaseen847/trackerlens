@@ -227,3 +227,16 @@ All KPIs, charts, lists and site cards read them, each query from the smallest t
 - Updating the rollups in the same transaction, rather than by cron, keeps the numbers live and exact.
 
 **Visitors** are counted once per day, because the visitor hash changes daily. Each visitor counts under their first visit of the day, so filtered visitor counts mean "people whose first visit of the day matched the filter".
+
+## 2026-10-15: Recognise social apps' built-in browsers
+
+**Decision:** When a visit has no UTM tags and no referrer, `classify()` checks whether the user agent is a social app's built-in browser:
+
+- Facebook `FBAN`/`FBAV`/`FB_IAB`, Instagram, Threads `Barcelona`, `LinkedInApp`;
+- TikTok `musical_ly`/`BytedanceWebview`, Snapchat, Pinterest, `TwitterAndroid`.
+
+A match credits the visit to that app instead of "Direct".
+
+**Why:** these in-app browsers often send no referrer (TikTok and Snapchat almost never do), so their visits used to look like typed-in traffic. Tags and a real referrer still win.
+
+**Privacy:** unchanged. The user agent is only read in memory during the request, as before, and never stored.

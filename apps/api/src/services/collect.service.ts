@@ -93,7 +93,12 @@ export async function handleHit(
   const country =
     ctx.country && /^[A-Za-z]{2}$/.test(ctx.country) ? ctx.country.toUpperCase() : 'XX';
   const salt = await getDailySalt(repo, now);
-  const source = classify({ pageUrl: payload.u, referrer: payload.r, siteDomain: site.domain });
+  const source = classify({
+    pageUrl: payload.u,
+    referrer: payload.r,
+    siteDomain: site.domain,
+    userAgent,
+  });
   const { browser, os } = parseUserAgent(userAgent);
 
   await repo.recordPageView({

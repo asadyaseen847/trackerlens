@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { classify, referrerHostOf } from '../src/classify.js';
+import { classify, inAppBrowserPlatform, referrerHostOf } from '../src/classify.js';
 import { PLATFORMS } from '../src/constants.js';
 
 const SITE = 'shop.example.com';
@@ -385,6 +385,77 @@ describe('classify (§8)', () => {
       classify({ pageUrl: page(), referrer: 'https://www.google.com/x', siteDomain: SITE })
         .referrerHost,
     ).toBe('google.com');
+  });
+});
+
+describe("social apps' built-in browsers", () => {
+  // Real user agents of each app's in-app browser.
+  const UA = {
+    facebook:
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/FBIOS;FBAV/470.0.0.40.97;FBBV/619182283;FBDV/iPhone15,2;FBMD/iPhone;FBSN/iOS;FBSV/17.5;FBSS/3;FBID/phone;FBLC/en_US;FBOP/5]',
+    facebookAndroid:
+      'Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/AP2A.240805.005; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/127.0.6533.103 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/479.0.0.53.105;]',
+    instagram:
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 341.0.4.27.92 (iPhone15,2; iOS 17_5; en_US; en; scale=3.00; 1179x2556; 621434925)',
+    threads:
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Barcelona 341.0.0.21.94 (iPhone15,2; iOS 17_5; en_US; en-US; scale=3.00; 1179x2556; 621066562)',
+    linkedin:
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [LinkedInApp]/9.30.1840',
+    tiktok:
+      'Mozilla/5.0 (Linux; Android 14; SM-S918B Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/126.0.6478.134 Mobile Safari/537.36 trill_350401 JsSdk/1.0 NetType/WIFI Channel/googleplay AppName/musical_ly app_version/35.4.1 ByteLocale/en ByteFullLocale/en Region/US BytedanceWebview/d8a21c6',
+    snapchat:
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Snapchat/13.3.0.40 (like Safari/8617.2.4.10.8, panda)',
+    pinterest:
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [Pinterest/iOS]',
+    x: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36 TwitterAndroid',
+    safari:
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+  };
+  const fromApp = (userAgent: string, extra: { url?: string; referrer?: string } = {}) =>
+    classify({
+      pageUrl: extra.url ?? page(),
+      referrer: extra.referrer ?? null,
+      siteDomain: SITE,
+      userAgent,
+    });
+
+  it.each([
+    ['facebook', UA.facebook, 'facebook'],
+    ['facebook (Android)', UA.facebookAndroid, 'facebook'],
+    ['instagram', UA.instagram, 'instagram'],
+    ['threads', UA.threads, 'threads'],
+    ['linkedin', UA.linkedin, 'linkedin'],
+    ['tiktok', UA.tiktok, 'tiktok'],
+    ['snapchat', UA.snapchat, 'snapchat'],
+    ['pinterest', UA.pinterest, 'pinterest'],
+    ['x', UA.x, 'x'],
+  ])('a visit with no referrer from the %s app counts for it', (_name, ua, platform) => {
+    expect(fromApp(ua)).toMatchObject({ channel: 'social', platform, sourceDetail: null });
+  });
+
+  it('a normal browser with no referrer is still direct', () => {
+    expect(fromApp(UA.safari)).toMatchObject({ channel: 'direct', platform: 'direct' });
+  });
+
+  it('UTM tags and a real referrer still come first', () => {
+    expect(
+      fromApp(UA.instagram, { url: page('?utm_source=newsletter&utm_medium=email') }),
+    ).toMatchObject({ channel: 'email', platform: 'other', sourceDetail: 'newsletter' });
+    expect(fromApp(UA.tiktok, { referrer: 'https://www.google.com/' })).toMatchObject({
+      platform: 'google',
+    });
+  });
+
+  it('clicking between pages inside the app keeps the visit internal', () => {
+    expect(fromApp(UA.facebook, { referrer: `https://${SITE}/` })).toMatchObject({
+      internal: true,
+      platform: 'direct',
+    });
+  });
+
+  it('inAppBrowserPlatform ignores missing user agents', () => {
+    expect(inAppBrowserPlatform(null)).toBeNull();
+    expect(inAppBrowserPlatform(UA.safari)).toBeNull();
   });
 });
 

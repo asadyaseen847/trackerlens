@@ -102,6 +102,20 @@ describe('POST /api/e', () => {
     expect(await rows(db, 'select 1 from page_views')).toHaveLength(2);
   });
 
+  it("credits a social app's built-in browser that sent no referrer", async () => {
+    const { app, db, pv } = await setup();
+    const instagramApp =
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 341.0.4.27.92 (iPhone15,2; iOS 17_5; en_US; en; scale=3.00; 1179x2556; 621434925)';
+    expect(
+      (await hit(app, pv('https://shop.example.com/'), { 'User-Agent': instagramApp })).status,
+    ).toBe(202);
+    const visits = await rows<{ channel_id: string; platform_id: string }>(
+      db,
+      'select channel_id, platform_id from visits',
+    );
+    expect(visits).toEqual([{ channel_id: 'social', platform_id: 'instagram' }]);
+  });
+
   it('treats a different visitor (IP) as a different visit', async () => {
     const { app, db, pv } = await setup();
     await hit(app, pv('https://shop.example.com/'));
