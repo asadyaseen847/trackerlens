@@ -5,8 +5,11 @@ import { activeTab, Tabs } from './Tabs';
 import { TopBar } from './TopBar';
 
 export interface AppShellProps {
-  /** "app": top bar + tabs (signed-in pages). "bare": top bar only (auth, onboarding, privacy). */
-  variant: 'app' | 'bare';
+  /**
+   * "app": top bar + tabs (signed-in pages). "bare": top bar only (auth, onboarding, privacy).
+   * "public": brand only, never the signed-in account (the coming-soon waitlist page).
+   */
+  variant: 'app' | 'bare' | 'public';
 }
 
 export function AppShell({ variant }: AppShellProps) {
@@ -15,7 +18,7 @@ export function AppShell({ variant }: AppShellProps) {
 
   return (
     <div className={styles.page}>
-      <TopBar showSettings={variant === 'app'} />
+      <TopBar showSettings={variant === 'app'} showAccount={variant !== 'public'} />
       {variant === 'app' && <Tabs />}
       <main
         className={styles.main}

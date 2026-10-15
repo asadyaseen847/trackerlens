@@ -6,7 +6,6 @@ import {
 } from '@audience/shared';
 import { useMutation } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react';
-import { Link } from 'react-router';
 import { BreakdownRow } from '../../components/breakdown/BreakdownRow';
 import breakdownStyles from '../../components/breakdown/Breakdown.module.css';
 import { Button } from '../../components/ui/Button';
@@ -130,12 +129,7 @@ export function WaitlistPage() {
           )}
         </div>
 
-        <p className={styles.meta}>
-          <span>No cookies, no IP addresses stored.</span>
-          <span>
-            Have an account? <Link to="/login">Log in</Link>
-          </span>
-        </p>
+        <p className={styles.meta}>No cookies, no IP addresses stored.</p>
       </div>
 
       <div className={styles.preview}>

@@ -31,8 +31,11 @@ export const router = createBrowserRouter([
         ),
       },
       { path: '/privacy', element: <PrivacyPage /> },
-      { path: '/waitlist', element: <WaitlistPage /> },
     ],
+  },
+  {
+    element: <AppShell variant="public" />,
+    children: [{ path: '/waitlist', element: <WaitlistPage /> }],
   },
   {
     path: '/app',

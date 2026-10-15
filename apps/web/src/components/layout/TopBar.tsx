@@ -5,14 +5,20 @@ import styles from './TopBar.module.css';
 
 export interface TopBarProps {
   showSettings: boolean;
+  /** False on public marketing pages (the waitlist): just the brand, no account details. */
+  showAccount?: boolean;
 }
 
-export function TopBar({ showSettings }: TopBarProps) {
-  const { data: me } = useMe();
+export function TopBar({ showSettings, showAccount = true }: TopBarProps) {
+  const { data: signedIn } = useMe();
+  const me = showAccount ? signedIn : null;
   // TODO(Phase 4, §13): "Sample data" badge while the mock social provider is in use.
   return (
     <header className={styles.topbar}>
-      <Link to={me ? '/app/websites' : '/login'} className={styles.brand}>
+      <Link
+        to={!showAccount ? '/waitlist' : me ? '/app/websites' : '/login'}
+        className={styles.brand}
+      >
         <span className={styles.logo} aria-hidden="true">
           <svg
             width="22"
