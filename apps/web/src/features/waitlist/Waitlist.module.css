@@ -1,0 +1,221 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding-top: clamp(8px, 3vh, 32px);
+}
+
+/* ---------- hero: pitch + form on the left, example panel on the right ---------- */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 48px);
+  align-items: start;
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.badge {
+  align-self: flex-start;
+  border: 2px dashed var(--border);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-weight: 800;
+  font-size: 13px;
+  background: var(--surface);
+}
+
+.lead {
+  font-size: 17px;
+  max-width: 56ch;
+}
+
+.card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 22px;
+  box-shadow: 6px 6px 0 var(--shadow);
+  padding: 22px 24px;
+  max-width: 520px;
+}
+
+.card h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.note {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.switch {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.switch a {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+/* Confirmation after joining. Ink text on the soft "good" fill (§12). */
+.done {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  border-radius: 14px;
+}
+
+.done:focus {
+  outline: none;
+}
+
+.done:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 6px;
+}
+
+.check {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--good);
+  display: grid;
+  place-items: center;
+}
+
+.check svg {
+  stroke: var(--ink);
+}
+
+.sub {
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.sub b {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- example panel ---------- */
+.preview {
+  min-width: 0;
+  transform: rotate(1deg);
+}
+
+.example {
+  border: 2px dashed var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.sw {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--c);
+  flex: none;
+  display: inline-block;
+}
+
+.insight {
+  border-top: 2px dashed var(--line);
+  padding-top: 14px;
+  font-size: 15px;
+}
+
+.insight b {
+  font-weight: 800;
+}
+
+/* ---------- three feature cards ---------- */
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.feature {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 5px 5px 0 var(--shadow);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.feature h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  text-wrap: balance;
+}
+
+.feature p {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.step {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--pressed-bg);
+  color: var(--pressed-fg);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- privacy panel ---------- */
+.list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.more a {
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .features {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .preview {
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 22px 16px;
+  }
+}

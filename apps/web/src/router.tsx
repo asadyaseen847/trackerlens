@@ -7,6 +7,7 @@ import { InstallPage } from './features/install/InstallPage';
 import { OnboardingPage } from './features/onboarding/OnboardingPage';
 import { SettingsPage } from './features/settings/SettingsPage';
 import { SocialPage } from './features/social/SocialPage';
+import { WaitlistPage } from './features/waitlist/WaitlistPage';
 import { WebsitesPage } from './features/websites/WebsitesPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { PrivacyPage } from './pages/PrivacyPage';
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
         ),
       },
       { path: '/privacy', element: <PrivacyPage /> },
+      { path: '/waitlist', element: <WaitlistPage /> },
     ],
   },
   {

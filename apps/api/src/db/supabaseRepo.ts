@@ -265,5 +265,14 @@ export function supabaseRepo(): Repo {
         pageViewsDeleted: Number(row?.page_views_deleted ?? 0),
       };
     },
+
+    /* ---------- waitlist ---------- */
+    async joinWaitlist(input) {
+      ok(
+        await getDb()
+          .from('waitlist_signups')
+          .upsert(input, { onConflict: 'email', ignoreDuplicates: true }),
+      );
+    },
   };
 }

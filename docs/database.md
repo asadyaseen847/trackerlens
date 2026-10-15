@@ -1,9 +1,10 @@
 # Database guide
 
-The database is **Supabase Postgres**, defined by two files, run in order:
+The database is **Supabase Postgres**, defined by three files, run in order:
 
 1. [`20261013000000_initial_schema.sql`](../supabase/migrations/20261013000000_initial_schema.sql): tables, lookups, rules and security.
 2. [`20261014000000_tracking_and_stats.sql`](../supabase/migrations/20261014000000_tracking_and_stats.sql): the functions that record visits and compute the stats (see "Functions" below).
+3. [`20261015000000_waitlist.sql`](../supabase/migrations/20261015000000_waitlist.sql): the `waitlist_signups` table behind the public `/waitlist` page.
 
 Every table and column also has a description, which Supabase shows in the **Table Editor**: hover a column name, or open a table's definition.
 
@@ -34,6 +35,11 @@ erDiagram
         text email UK
         text password_hash
         text name
+    }
+    waitlist_signups {
+        uuid id PK
+        text email UK
+        text website
     }
     workspaces {
         uuid id PK
@@ -146,6 +152,7 @@ erDiagram
 | Social   | `social_accounts`       | a connected Instagram/Facebook/… profile                                             |
 |          | `social_account_tokens` | that account's encrypted login tokens, kept apart                                    |
 |          | `social_daily_stats`    | that account's followers and views for one day                                       |
+| Waitlist | `waitlist_signups`      | someone who asked to join on `/waitlist`: email and, optionally, their website       |
 
 ## Design rules
 

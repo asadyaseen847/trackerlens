@@ -219,6 +219,11 @@ export interface SocialOverviewResponse {
 
 /* ---------- API: errors ---------- */
 
+/** POST /api/waitlist. The same for a new email and one already on the list. */
+export interface WaitlistResponse {
+  ok: true;
+}
+
 export interface ApiErrorBody {
   error: string;
   phase?: number;

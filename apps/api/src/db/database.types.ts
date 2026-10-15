@@ -269,6 +269,11 @@ export type Database = {
           Fk<'daily_page_stats_channel_id_fkey', 'channel_id', 'channels'>,
         ]
       >;
+      /** supabase/migrations/20261015000000_waitlist.sql */
+      waitlist_signups: Table<
+        { id: string; email: string; website: string | null; created_at: string },
+        'email'
+      >;
     };
     Views: { [_ in never]: never };
     /** supabase/migrations/20261014000000_tracking_and_stats.sql */

@@ -144,6 +144,10 @@ export interface Repo {
 
   /* ---------- retention (Phase 6) ---------- */
   purgeExpiredData(): Promise<{ visitsDeleted: number; pageViewsDeleted: number }>;
+
+  /* ---------- waitlist ---------- */
+  /** Adds the email to the waitlist. An email that is already on it keeps its first row. */
+  joinWaitlist(input: TablesInsert<'waitlist_signups'>): Promise<void>;
 }
 
 /** A KPI row from SQL (bigint may arrive as a string), or zeros when there is none. */

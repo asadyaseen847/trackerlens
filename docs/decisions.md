@@ -13,6 +13,20 @@ A short log of choices that aren't obvious from the code. Newest first.
 
 ---
 
+## 2026-10-15: Public waitlist page
+
+**Context:** we want people to sign up before accounts open. The brief (§11) doesn't cover it.
+
+**Decision:**
+
+- A public `/waitlist` page, plus `POST /api/waitlist { email, website? }`, stored in `waitlist_signups`.
+- The table isn't linked to `users`: someone on the waitlist has no account yet.
+- The endpoint answers `201 { ok: true }` whether the email is new or already listed, and keeps the first row, so the form can't be used to check who signed up.
+- It uses the auth rate limit.
+- The example panel on the page reuses the dashboard's breakdown rows and is labeled "Example".
+
+**Why:** this reuses the existing form, panel and repo patterns. It needs no new dependency and no email service; sending the "your place is open" email is left for later.
+
 ## 2026-10-14: Product name TrackerLens
 
 **Decision:** `BRAND_NAME = 'TrackerLens'` and `IGNORE_PARAM = 'trackerlens_ignore'` in `packages/shared/src/constants.ts`. The tracker gets the parameter at build time (`build.mjs` `define`).

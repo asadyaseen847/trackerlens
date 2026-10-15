@@ -56,6 +56,27 @@ export const loginBodySchema = z.object({
 });
 export type LoginBody = z.input<typeof loginBodySchema>;
 
+/* ---------- waitlist (public /waitlist page) ---------- */
+
+/** Email, plus an optional website checked like "Add website". A blank website is left out. */
+export const waitlistBodySchema = z.object({
+  email,
+  website: z
+    .string()
+    .max(300)
+    .optional()
+    .transform((value, ctx) => {
+      if (value === undefined || value.trim() === '') return undefined;
+      const check = checkDomainInput(value);
+      if (!check.ok) {
+        ctx.addIssue({ code: 'custom', message: check.error });
+        return z.NEVER;
+      }
+      return check.domain;
+    }),
+});
+export type WaitlistBody = z.input<typeof waitlistBodySchema>;
+
 /* ---------- workspace (§10) ---------- */
 
 export const updateWorkspaceBodySchema = z

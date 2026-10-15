@@ -6,6 +6,7 @@ import { healthRouter } from './health.js';
 import { sitesRouter } from './sites.js';
 import { socialRouter } from './social.js';
 import { statsRouter } from './stats.js';
+import { waitlistRouter } from './waitlist.js';
 import { workspaceRouter } from './workspace.js';
 
 /** Everything under /api except the collect endpoint /api/e (see createApp). §10. */
@@ -19,6 +20,7 @@ export function apiRouter(deps: AppDeps): Router {
   router.use('/stats', statsRouter(deps));
   router.use('/social', socialRouter(deps));
   router.use('/cron', cronRouter(deps));
+  router.use('/waitlist', waitlistRouter(deps));
 
   return router;
 }

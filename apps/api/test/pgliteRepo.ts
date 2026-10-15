@@ -304,6 +304,11 @@ export function pgliteRepo(db: PGlite): Repo & { db: PGlite } {
         pageViewsDeleted: row?.page_views_deleted ?? 0,
       };
     },
+
+    async joinWaitlist(input) {
+      const q = insertSql('waitlist_signups', input, 'on conflict (email) do nothing');
+      await run(q.sql, q.params);
+    },
   };
   return repo;
 }
