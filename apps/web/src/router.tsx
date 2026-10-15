@@ -15,6 +15,8 @@ import { PrivacyPage } from './pages/PrivacyPage';
 /** Routes from BUILD_PROMPT §11. /app/* and /onboarding need a session. */
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/app/websites" replace /> },
+  // The waitlist is public; forward the easy-to-guess /app address without asking for a login.
+  { path: '/app/waitlist', element: <Navigate to="/waitlist" replace /> },
   {
     element: <AppShell variant="bare" />,
     children: [
